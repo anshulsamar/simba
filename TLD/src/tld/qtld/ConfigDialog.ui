@@ -73,7 +73,7 @@
               <item>
                <widget class="QLineEdit" name="videoPath">
                 <property name="text">
-                 <string>./video.mpg</string>
+                 <string>/Users/Anshul/Desktop/Track/Build/Videos/video.mpg</string>
                 </property>
                </widget>
               </item>

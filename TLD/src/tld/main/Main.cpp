@@ -9,6 +9,8 @@
 #include "Gui.h"
 #include "global.h"
 #include <opencv/cv.h>
+#include <sys/time.h>
+#include <ctype.h>
 
 extern "C" {
 #include <ccv.h>
@@ -29,6 +31,8 @@ extern "C" {
 }
 #endif
 
+#define BBF 1
+
 using namespace tld;
 using namespace cv;
 
@@ -43,6 +47,81 @@ using namespace cv;
 
 bool Main::doWork() {
 
+        /*USE CODE IN THIS COMMENT IF YOU WANT BBF INITIZILIZATIONs
+        // init av-related structs
+        AVFormatContext* ic = 0;
+        int video_stream = -1;
+        AVStream* video_st = 0;
+        AVFrame* picture = 0;
+        AVFrame rgb_picture;
+        memset(&rgb_picture, 0, sizeof(AVPicture));
+        AVPacket packet;
+        memset(&packet, 0, sizeof(AVPacket));
+        av_init_packet(&packet);
+        av_register_all();
+        avformat_network_init();
+        // load video and codec
+        avformat_open_input(&ic, videoPath.c_str(), 0, 0);
+        avformat_find_stream_info(ic, 0);
+        int i;
+        for (i = 0; i < ic->nb_streams; i++)
+        {
+            AVCodecContext* enc = ic->streams[i]->codec;
+            enc->thread_count = 2;
+            if (AVMEDIA_TYPE_VIDEO == enc->codec_type && video_stream < 0)
+            {
+                AVCodec* codec = avcodec_find_decoder(enc->codec_id);
+                if (!codec || avcodec_open2(enc, codec, 0) < 0)
+                    continue;
+                video_stream = i;
+                video_st = ic->streams[i];
+                picture = avcodec_alloc_frame();
+                rgb_picture.data[0] = (uint8_t*)ccmalloc(avpicture_get_size(PIX_FMT_RGB24, enc->width, enc->height));
+                avpicture_fill((AVPicture*)&rgb_picture, rgb_picture.data[0], PIX_FMT_RGB24, enc->width, enc->height);
+                break;
+            }
+        }
+        int got_picture = 0;
+        while (!got_picture)
+        {
+            int result = av_read_frame(ic, &packet);
+            if (result == AVERROR(EAGAIN))
+                continue;
+            avcodec_decode_video2(video_st->codec, picture, &got_picture, &packet);
+        }
+        ccv_enable_default_cache();
+        struct SwsContext* picture_ctx = sws_getCachedContext(0, video_st->codec->width, video_st->codec->height, video_st->codec->pix_fmt, video_st->codec->width, video_st->codec->height, PIX_FMT_RGB24, SWS_BICUBIC, 0, 0, 0);
+        sws_scale(picture_ctx, (const uint8_t* const*)picture->data, picture->linesize, 0, video_st->codec->height, rgb_picture.data, rgb_picture.linesize);
+
+        //BBF initialization
+
+        ccv_enable_default_cache();
+        ccv_dense_matrix_t* image = 0;
+        ccv_bbf_classifier_cascade_t* cascade = ccv_load_bbf_classifier_cascade("/Users/Anshul/Desktop/FrankLab/ccv/samples/face");
+
+        //BBF initialization
+
+
+        ccv_dense_matrix_t* x = 0;
+        ccv_read(rgb_picture.data[0], &x, CCV_IO_RGB_RAW | CCV_IO_GRAY, video_st->codec->height, video_st->codec->width, rgb_picture.linesize[0]);
+
+        if (x != 0)
+        {
+            ccv_array_t* seq = ccv_bbf_detect_objects(x, &cascade, 1, ccv_bbf_default_params);
+            for (int i = 0; i < seq->rnum; i++)
+            {
+                ccv_comp_t* comp = (ccv_comp_t*)ccv_array_get(seq, i);
+                printf("%d %d %d %d %f\n", comp->rect.x, comp->rect.y, comp->rect.width, comp->rect.height, comp->confidence);
+                fflush(stdout);
+            }
+            ccv_array_free(seq);
+            ccv_matrix_free(x);
+        }
+
+        ccv_dense_matrix_t* y = 0;
+*/
+
+
     bool ok;
 
     if (loadIni){
@@ -56,7 +135,7 @@ bool Main::doWork() {
     Mat grey(img->height, img->width, CV_8UC1);
     cvtColor(cv::Mat(img), grey, CV_BGR2GRAY);
 
-    analytics->append(QString("Press > to start or + to add a tracker. Ok"));
+    analytics->append(QString("Press > to start or + to add a tracker"));
 
     gui->setWidthHeight(img->width, img->height);
     gui->showImage(img);
@@ -78,7 +157,7 @@ bool Main::doWork() {
     bool reuseFrameOnce = false;
     bool skipProcessingOnce = false;
     IplImage *graphCopy = (IplImage *) cvClone(graphImage);
-    int xCoord = 0;
+    int xCoord = 20;
 
     while(imAcqHasMoreFrames(imAcq))
     {
@@ -112,9 +191,12 @@ bool Main::doWork() {
             groups[i]->push_back(0);
         }
 
+        int countMissed = 0;
+
         for (int i = 0; i < numTrackers; i++){
 
-            if (trackers[i]->found())            {
+            if (trackers[i]->found()) {
+                trackerConsecutiveMissed[i] = 0;
                 struct colors* c = groupColors[trackersToGroupMap[i]];
                 CvScalar rectangleColor = CV_RGB(c->r, c->g, c->b);
                 CvPoint topLeft = cvPoint(rectangles[i]->x, rectangles[i]->y);
@@ -125,32 +207,98 @@ bool Main::doWork() {
                 CvPoint center = cvPoint(rectangles[i]->x + rectangles[i]->width/2, rectangles[i]->y + rectangles[i]->height/2);
                 cvLine(img, cvPoint(center.x-2, center.y-2), cvPoint(center.x+2, center.y+2), rectangleColor, 2);
                 cvLine(img, cvPoint(center.x-2, center.y+2), cvPoint(center.x+2, center.y-2), rectangleColor, 2);
-
-
-
+            } else {
+                trackerConsecutiveMissed[i]++;
+                countMissed++;
             }
+
         }
 
-        if (xCoord == graphWidth){
+
+        if (xCoord > graphWidth){
             cvReleaseImage(&graphCopy);
             graphCopy = (IplImage *) cvClone(graphImage);
-            xCoord = 0;
+            xCoord = 20;
         }
+
+        CvFont font;
+        cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, 0.5, 0.5, 0, 1, 8);
+
+        /*for (int j = 0; j < groupColors.size(); j++){
+
+            struct colors* c = groupColors[j];
+            CvScalar boxColor = CV_RGB(c->r, c->g, c->b);
+            int start = (j+1)*(graphHeight/4);
+            cvRectangle(graphCopy, cvPoint(15, graphHeight - start - sizeBox), cvPoint(15 + sizeBox, graphHeight - start), boxColor, CV_FILLED, 8, 0);
+            cvPutText(graphCopy, QString::number(groupNumTrackers[j]).toStdString().c_str(), cvPoint(spacing*(j+1) + sizeBox*.1, img->height - sizeBox - spacing + sizeBox/1.25), &font, cvScalar(0, 0, 0));
+
+        }*/
 
         for (int i = 0; i < numGroups; i++){
              std::vector<int>* currGroup = groups[i];
              int size = (*currGroup)[currGroup->size() - 1];
              struct colors* c = groupColors[i];
              CvScalar pointColor = CV_RGB(c->r, c->g, c->b);
-             int start = (i+1)*(graphHeight/7);
+             int start = (i+1)*(graphHeight/4);
              int yCoord = graphHeight - start - size*3;
-             //cvLine(graphCopy, cvPoint(xCoord, yCoord), cvPoint(xCoord, yCoord), pointColor, 2);
+             cvLine(graphCopy, cvPoint(xCoord, yCoord), cvPoint(xCoord, yCoord), pointColor, 2);
+             //std::vector<int>* currGroup = groups[trackersToGroupMap[i]];
+             //cvPutText(graphCopy, QString::number((*currGroup)[currGroup->size() - 1]).toStdString().c_str(), cvPoint(5, graphHeight - start), &font, cvScalar(255, 255, 255));
         }
-        xCoord += 3;
+        if (numGroups > 0)
+            xCoord += 3;
 
         gui->showGraph(graphCopy);
         gui->setMouseHandler();
         gui->showImage(img);
+
+         /*//USE CODE IN THIS COMMENT IF YOU WANT BBF INITIALIZATIONS
+
+        if (BBF){
+        got_picture = 0;
+        int result = av_read_frame(ic, &packet);
+        if (result == AVERROR(EAGAIN))
+            continue;
+        avcodec_decode_video2(video_st->codec, picture, &got_picture, &packet);
+        if (!got_picture)
+            break;
+        sws_scale(picture_ctx, (const uint8_t* const*)picture->data, picture->linesize, 0, video_st->codec->height, rgb_picture.data, rgb_picture.linesize);
+
+        ccv_read(rgb_picture.data[0], &y, CCV_IO_RGB_RAW | CCV_IO_GRAY, video_st->codec->height, video_st->codec->width, rgb_picture.linesize[0]);
+
+        if (countMissed == numTrackers && y != 0)
+        {
+            std::cout << "No tracker used using BBF to detect" << std::endl;
+            ccv_array_t* seq = ccv_bbf_detect_objects(y, &cascade, 1, ccv_bbf_default_params);
+            for (int i = 0; i < seq->rnum; i++)
+            {
+                ccv_comp_t* comp = (ccv_comp_t*)ccv_array_get(seq, i);
+                printf("%d %d %d %d %d %f\n", frameCount, comp->rect.x, comp->rect.y, comp->rect.width, comp->rect.height, comp->confidence);
+                fflush(stdout);
+
+                int trackerId = numTrackers;
+                CvRect *add = new CvRect;
+                add->x = comp->rect.x;
+                add->y = comp->rect.y;
+                add->width = comp->rect.width;
+                add->height = comp->rect.height;
+                addTrackerInfo(frameCount, -1, add);
+                createTLD(rectangles[trackerId], ccv_tld_params, trackerId);
+                std::cout << "made new tld" << std::endl;
+                //look at initialize to see how ini file is made and other important stuff
+
+            }
+            ccv_array_free(seq);
+            ccv_matrix_free(y);
+        }
+
+        x = y;
+        y = 0;
+    }*/
+
+
+
+
         videoKey = gui->getVideoKey();
 
         while (videoKey == 'p') {
@@ -167,8 +315,11 @@ bool Main::doWork() {
         }
         if (videoKey == 'i'){
             analysis();
+            std::cout << "done with analysis" << std::endl;
+            gui->setMouseHandler();
             videoKey = gui->getVideoKey();
-            while (videoKey != 'a' || videoKey != 'p' || videoKey != 'q') {
+            while (videoKey != 'a' && videoKey != 'p' && videoKey != 'q') {
+                gui->setMouseHandler();
                 videoKey = gui->getVideoKey();
             }
         }
@@ -191,6 +342,22 @@ bool Main::doWork() {
 
     cvReleaseImage(&graphCopy);
 
+
+/*//     USE CODE IN THIS COMMENT IF YOU WANT BBF INITIALIZATIONS
+    if (BBF){
+    //tld.c avi struct cleanup
+
+    ccv_matrix_free(x);
+    //ccv_tld_free(tld);
+    ccfree(rgb_picture.data[0]);
+    ccv_disable_cache();
+
+    //BBF cleanup
+
+    ccv_bbf_classifier_cascade_free(cascade);
+    ccv_disable_cache();
+    }*/
+
     return true;
 }
 
@@ -208,7 +375,7 @@ void Main::analysis(){
          int count = 0;
          for (int j = 0; j < groups[i]->size(); j++){
              int trackers = (*groups[i])[j];
-             std::cout << string("trackers: ") + QString::number(trackers).toStdString() << std::endl;
+             //std::cout << string("trackers: ") + QString::number(trackers).toStdString() << std::endl;
              if (trackers){
                  count++;
                  detection += trackers;
@@ -236,6 +403,7 @@ void Main::createTLD(CvRect *rect, const ccv_tld_param_t ccv_tld_params, int tra
 
     trackerSems.push_back(new QSemaphore());
     mainSems.push_back(new QSemaphore());
+    trackerConsecutiveMissed.push_back(0);
     Tracker* t = new Tracker(frameCount, trackerId, videoPath, trackerSems[trackerId], mainSems[trackerId], rectangles[trackerId], startFrames[trackerId], endFrames[trackerId], ccv_tld_params, saveResults, resultsDirectory, analytics, textMutex);
     trackers.push_back(t);
 
@@ -254,6 +422,7 @@ void Main::createTLD(CvRect *rect, const ccv_tld_param_t ccv_tld_params, int tra
     if (groupNumber >= numGroups || groupNumber < 0){
         groupNumber = numGroups;
         groups.push_back(new std::vector<int>);
+        groupNumTrackers.push_back(0);
         struct colors *c = new struct colors;
         if (groupNumber == 0){
             c->r = 225;
@@ -280,7 +449,7 @@ void Main::createTLD(CvRect *rect, const ccv_tld_param_t ccv_tld_params, int tra
         groupColors.push_back(c);
         numGroups++;
     }
-
+    groupNumTrackers[groupNumber]++;
     trackersToGroupMap[trackerId] = groupNumber;
     }
 
@@ -449,12 +618,15 @@ void Main::initGui(QTextEdit* analytics, int videoX, int videoY, int graphWidth,
 
     this->analytics = analytics;
 
-    IplImage* orig = cvLoadImage("/Users/Anshul/Desktop/Track/TLD/Resources/graph.jpg");   // Read the file
-    cvSetImageROI(orig, cvRect(0, 0, graphWidth, graphHeight));
-    graphImage = cvCreateImage(cvGetSize(orig), orig->depth, orig->nChannels);
-    cvCopy(orig, graphImage, NULL);
-    cvResetImageROI(orig);
-    cvReleaseImage(&orig);
+    IplImage* orig = cvLoadImage("./TLD.app/Contents/Resources/graph.jpg");   // Read the file
+    //cvSetImageROI(orig, cvRect(0, 0, graphWidth, graphHeight));
+    //graphImage = cvCreateImage(cvGetSize(orig), orig->depth, orig->nChannels);
+    //cvCopy(orig, graphImage, NULL);
+    //cvResetImageROI(orig);
+    //cvReleaseImage(&orig);
+
+    graphImage = (IplImage *)cvClone(orig);
+
 
     this->graphHeight = graphHeight;
     this->graphWidth = graphWidth;

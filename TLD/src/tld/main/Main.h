@@ -86,6 +86,8 @@ private:
     std::map<string, int> groupNameToId;
     std::map<int, int> trackersToGroupMap;
     std::vector< std::vector<int>* > groups;
+    std::vector<int> groupNumTrackers;
+
 
     struct colors {
         int r;
@@ -93,7 +95,9 @@ private:
         int b;
     };
 
-    std::vector< struct colors* > groupColors;
+        std::vector< struct colors* > groupColors;
+
+    std::vector<int> trackerConsecutiveMissed;
 
     int numTrackers;
     int frameCount;

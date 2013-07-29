@@ -10,6 +10,9 @@ struct colors {
     int b;
 };
 
+#define spacing 20
+#define sizeBox 30
+
 }
 
 extern ccv_tld_param_t ccv_tld_params;

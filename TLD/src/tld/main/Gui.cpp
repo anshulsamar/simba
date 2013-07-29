@@ -2,9 +2,7 @@
 #include "Main.h"
 #include <string>
 #include <sstream>
-
-#define spacing 20
-#define sizeBox 30
+#include "global.h"
 
 using std::string;
 

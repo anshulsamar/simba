@@ -54,7 +54,7 @@ int main(int argc, char **argv)
 
    QGraphicsScene scene;
    QGraphicsView view(&scene);
-   QGraphicsPixmapItem item(QPixmap("/Users/Anshul/Desktop/FrankLab/OpenTLD/loadingImage.jpg"));
+   QGraphicsPixmapItem item(QPixmap("./TLD.app/Contents/Resources/loadingImage.jpg"));
    scene.addItem(&item);
    view.setWindowFlags(Qt::FramelessWindowHint);
 

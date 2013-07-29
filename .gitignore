@@ -24,3 +24,6 @@ Build
 *.la
 *.a
 *.DS_Store
+*.mp4
+*.mpg
+videoNick
