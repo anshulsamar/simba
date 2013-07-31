@@ -124,13 +124,6 @@ bool Main::doWork() {
 
     bool ok;
 
-    if (loadIni){
-        for (int trackerId = 0; trackerId < trackersInIniFile; trackerId++){
-            createTLD(rectangles[trackerId], ccv_tld_params, trackerId);
-        }
-        analytics->append(QString("Created Trackers from Initialization File"));
-    }
-
     IplImage *img = imAcqGetImg(imAcq);
     Mat grey(img->height, img->width, CV_8UC1);
     cvtColor(cv::Mat(img), grey, CV_BGR2GRAY);
