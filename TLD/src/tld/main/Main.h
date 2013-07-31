@@ -44,6 +44,8 @@ public:
     QSettings* settingsOut;
     QTextEdit* analytics;
     QMutex* textMutex;
+    ccv_dense_matrix_t* x;
+    ccv_dense_matrix_t* y;
 
     Main() {
         selectManually = true;
@@ -58,6 +60,8 @@ public:
         numTrackers = 0;
         numGroups = 0;
         frameCount = 1;
+        x = 0;
+        y = 0;
 
         imAcq = imAcqAlloc();
         gui = new Gui();
@@ -66,7 +70,7 @@ public:
     ~Main();
     bool doWork();
     void addTrackerInfo(int startFrame, int endFrame, CvRect* add);
-    void initGui(QTextEdit* textEdit, int videoX, int videoY, int graphWidth, int graphHeight, int graphX, int graphY);
+    void initGui(int videoX, int videoY);
 
 private:
     void createTLD(CvRect *rect, const ccv_tld_param_t ccv_tld_params, int trackerId);

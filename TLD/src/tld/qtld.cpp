@@ -18,7 +18,6 @@
 #include "Gui.h"
 #include "ConfigDialog.h"
 
-
 extern "C" {
 #include <ccv.h>
 }
@@ -94,47 +93,16 @@ int main(int argc, char **argv)
         double videoWidth = cap.get(CV_CAP_PROP_FRAME_WIDTH);
         double videoHeight = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
 
-        int spacing = 50;
-        int heightOfBar = 20;
+        double videoX = desktopWidth/2 - videoWidth/2;
+        double videoY = desktopHeight/2 - videoHeight/2;
 
-        double windowWidth = 300 + videoWidth + spacing*3; //300 for analytics bar, 75 spacing*3
-        double windowHeight = desktop->height() - 100;
-        double windowX = desktopWidth/2 - windowWidth/2;
-        double windowY = desktopHeight/2 - windowHeight/2;
-
-        double analyticsHeight = windowHeight - 100;
-        double analyticsWidth = 300;
-        double analyticsX = windowX + spacing;
-        double analyticsY = windowY + spacing;
-
-        double graphHeight = windowHeight - videoHeight - spacing*3;
-        double graphWidth = videoWidth;
-        double graphX = windowX + analyticsWidth + spacing*2;
-        double graphY = windowY + videoHeight + spacing*2;
-
-        double videoX = graphX;
-        double videoY = windowY + spacing;
-
-        QTextEdit* analytics = new QTextEdit;
-        analytics->resize(analyticsWidth, analyticsHeight);
-        analytics->setWindowTitle("Analytics and Results");
-        analytics->move(analyticsX, analyticsY);
-        QString b("QWidget {background-color: black}\nQWidget {color: rgb(255, 255, 255)}\nQWidget {font: 14pt \"Source Sans Pro\"}");
-        analytics->setStyleSheet(b);
-        analytics->show();
-        analytics->append(QString("Track Learn Detect"));
-
-        //Initialize main's gui (opencv)
-
-        main->initGui(analytics, videoX, videoY, graphWidth, graphHeight, graphX, graphY);
+        main->initGui(videoX, videoY);
 
         if (!main->doWork()){
             return EXIT_FAILURE;
         }
 
         delete main;
-        analytics->close();
-        delete analytics;
         delete settings;
     }
 

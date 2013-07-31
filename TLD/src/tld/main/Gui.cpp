@@ -32,14 +32,6 @@ void Gui::showImage(IplImage *image)
     cvPutText(image, "+", cvPoint(i.width - sizeBox*3 - spacing*3 + sizeBox*.1, i.height - sizeBox - spacing + sizeBox/1.25), &font, cvScalar(0, 0, 0));
     cvPutText(image, "i", cvPoint(i.width - sizeBox*4 - spacing*4 + sizeBox*.32, i.height - sizeBox - spacing + sizeBox/1.2), &font, cvScalar(0, 0, 0));
 
-    /*for (int j = 0; j < groupColors->size(); j++){
-        struct colors* c = groupColors->at(j);
-        CvScalar boxColor = CV_RGB(c->r, c->g, c->b);
-        cvRectangle(image, cvPoint(sizeBox*j + spacing*(j+1), i.height - sizeBox - spacing), cvPoint(sizeBox*(j+1) + spacing*(j+1), i.height - spacing), boxColor, CV_FILLED, 8, 0);
-        //cvPutText(image, "+", cvPoint(i.width - sizeBox*3 - spacing*3 + sizeBox*.1, i.height - sizeBox - spacing + sizeBox/1.25), &font, cvScalar(0, 0, 0));
-
-    }*/
-
     cvShowImage(m_window_name.c_str(), image);
 }
 
@@ -106,12 +98,6 @@ int getBBFromUser(IplImage *img, CvRect &rect, Gui *gui, int num, std::string me
     cvPutText(img0, message.c_str(), cvPoint(10, 20),
               &font, cvScalar(255, 255, 0));
 
-
-    /*std::ostringstream numberString;
-    numberString << num;
-    std::string trackerMessage = "Tracker number: " + numberString.str();
-    cvPutText(img0, trackerMessage.c_str(), cvPoint(400, 20),
-              &font, cvScalar(255, 255, 0));*/
     cvShowImage(window_name.c_str(), img0);
 
     while(!correctBB)
@@ -194,20 +180,6 @@ char Gui::getVideoKey(){
     char ret = i.key;
     i.key = 0;
     return ret;
-}
-
-void Gui::showGraph(IplImage* image)
-{
-    cvShowImage("Graph", image);
-}
-
-
-void Gui::initGraphWindow(int graphWidth, int graphHeight, int graphX, int graphY){
-
-    cvNamedWindow("Graph", CV_WINDOW_AUTOSIZE);
-    resizeWindow("Graph", graphWidth, graphHeight);
-    cvMoveWindow("Graph", graphX, graphY);
-
 }
 
 void Gui::initVideoWindow(int videoX, int videoY)

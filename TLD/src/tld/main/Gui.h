@@ -15,9 +15,7 @@ public:
     Gui();
     ~Gui();
     void initVideoWindow(int videoX, int videoY);
-    void initGraphWindow(int graphWidth, int graphHeight, int graphX, int graphY);
     void showImage(IplImage *image);
-    void showGraph(IplImage *image);
     char getKey();
     char getVideoKey();
     void setWidthHeight(int width, int height);

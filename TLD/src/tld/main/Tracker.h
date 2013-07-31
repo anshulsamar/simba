@@ -43,10 +43,9 @@ using namespace cv;
 class Tracker : public QThread
 {
 public:
-    Tracker(int frameCount, int trackerId, std::string videoPath, QSemaphore* trackerSemaphore, QSemaphore *mainSemaphore, CvRect *rect, int startFrame, int endFrame, const ccv_tld_param_t ccv_tld_params, bool saveResults, std::string resultsDirectory, QTextEdit* textEdit, QMutex* textMutex);
+    Tracker(int frameCount, int trackerId, std::string videoPath, QSemaphore* trackerSemaphore, QSemaphore *mainSemaphore, CvRect *rect, int startFrame, int endFrame, const ccv_tld_param_t ccv_tld_params, bool saveResults, std::string resultsDirectory, ccv_dense_matrix_t** x, ccv_dense_matrix_t** y);
     ~Tracker();
     void track();
-    void reinitialize(const ccv_tld_param_t ccv_tld_params);
     bool found();
     void trackingComplete();
 
@@ -55,14 +54,8 @@ protected:
 
 private:
     ccv_tld_t* ccvtld;
-    ccv_dense_matrix_t* x;
-    ccv_dense_matrix_t* y;
-    AVStream* video_st;
-    AVFrame rgb_picture;
-    AVFormatContext* ic;
-    AVFrame* picture;
-    AVPacket packet;
-    struct SwsContext* picture_ctx;
+    ccv_dense_matrix_t** xPtr;
+    ccv_dense_matrix_t** yPtr;
     QSemaphore *trackerSemaphore;
     QSemaphore *mainSemaphore;
     CvRect *rect;
@@ -75,8 +68,6 @@ private:
     FILE* file;
     bool saveResults;
     std::string resultsDirectory;
-    QTextEdit* analytics;
-    QMutex* textMutex;
 
     bool done;
 };
