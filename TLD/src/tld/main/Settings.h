@@ -70,11 +70,6 @@ public:
     std::string  m_iniDirectory;
     int m_method;
 
-    int m_camNo; //!< Which camera to use
-    float m_fps; //!< Frames per second
-    int m_startFrame; //!< first frame of capturing
-    int m_lastFrame; //!< last frame of caputing; 0 means take all frames
-
     bool m_loadVideo;
     bool m_loadIni;
     bool m_saveResults;

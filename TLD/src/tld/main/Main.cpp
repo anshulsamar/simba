@@ -7,7 +7,8 @@
 #include "Main.h"
 #include "Config.h"
 #include "Gui.h"
-#include "global.h"
+//#include "global.h"
+#include "Settings.h"
 #include <opencv/cv.h>
 #include <sys/time.h>
 #include <ctype.h>
@@ -43,11 +44,45 @@ using namespace cv;
  * if prompted, allows for new tracker objects to new or existing groups.
  */
 
-bool Main::doWork() {
+bool Main::doWork(Settings* settings) {
+
+    const ccv_tld_param_t ccv_tld_params = {
+        .win_size = {
+            settings->win_size_width,
+            settings->win_size_height,
+        },
+        .level = settings->level,
+        .min_forward_backward_error = settings->min_forward_backward_error,
+        .min_eigen = settings->min_eigen,
+        .min_win = settings->min_win,
+        .interval = settings->interval,
+        .shift = settings->shift,
+        .top_n = settings->top_n,
+        .rotation = settings->rotation,
+        .include_overlap = settings->include_overlap,
+        .exclude_overlap = settings->exclude_overlap,
+        .structs = settings->structs,
+        .features = settings->features,
+        .validate_set = settings->validate_set,
+        .nnc_same = settings->nnc_same,
+        .nnc_thres = settings->nnc_thres,
+        .nnc_verify = settings->nnc_verify,
+        .nnc_beyond = settings->nnc_beyond,
+        .nnc_collect = settings->nnc_collect,
+        .bad_patches = settings->bad_patches,
+        .new_deform = settings->new_deform,
+        .track_deform = settings->track_deform,
+        .new_deform_angle = settings->new_deform_angle,
+        .track_deform_angle = settings->track_deform_angle,
+        .new_deform_scale = settings->new_deform_scale,
+        .track_deform_scale = settings->track_deform_scale,
+        .new_deform_shift = settings->new_deform_shift,
+        .track_deform_shift = settings->track_deform_shift,
+    };
 
     bool ok;
 
-    std::string imagePath = resultsDirectory;
+    std::string imagePath = videoPath;
     char num[64];
     memset(num, 0, 64);
     sprintf(num, "%05d", frameCount);
@@ -59,17 +94,61 @@ bool Main::doWork() {
     if (!img)
         return EXIT_FAILURE;
 
-    ccv_enable_default_cache();
-    ccv_read(imagePath.c_str(), &x, CCV_IO_GRAY | CCV_IO_ANY_FILE);
-
     Mat grey(img->height, img->width, CV_8UC1);
     cvtColor(cv::Mat(img), grey, CV_BGR2GRAY);
 
     gui->setWidthHeight(img->width, img->height);
     gui->showImage(img);
-    gui->setMouseHandler();
 
-    char videoKey = gui->getVideoKey();
+    ccv_enable_default_cache();
+    ccv_read(imagePath.c_str(), &x, CCV_IO_GRAY | CCV_IO_ANY_FILE);
+
+    IplImage* dpmInitializationImage = (IplImage* )cvClone(img);
+    int i, j;
+    ccv_dense_matrix_t* dpmImage = 0;
+    ccv_read(imagePath.c_str(), &dpmImage, CCV_IO_ANY_FILE);
+    ccv_dpm_mixture_model_t* model = ccv_load_dpm_mixture_model("/Users/Anshul/Desktop/FrankLab/ccv/samples/pedestrian.m");
+
+    ccv_array_t* seq = ccv_dpm_detect_objects(dpmImage, &model, 1, ccv_dpm_default_params);
+    if (seq){
+        for (i = 0; i < seq->rnum; i++)
+        {
+            ccv_root_comp_t* comp = (ccv_root_comp_t*)ccv_array_get(seq, i);
+
+            int trackerId = numTrackers;
+            CvRect *add = new CvRect;
+            add->x = comp->rect.x;
+            add->y = comp->rect.y;
+            add->width = comp->rect.width;
+            add->height = comp->rect.height;
+            addTrackerInfo(frameCount, -1, add);
+            createTLD(rectangles[trackerId], ccv_tld_params, trackerId);
+
+            struct colors* c = groupColors[trackersToGroupMap[i]];
+            CvScalar rectangleColor = CV_RGB(c->r, c->g, c->b);
+            CvPoint topLeft = cvPoint(rectangles[i]->x, rectangles[i]->y);
+            CvPoint bottomRight = cvPoint(rectangles[i]->x + rectangles[i]->width, rectangles[i]->y + rectangles[i]->height);
+            cvRectangle(dpmInitializationImage, topLeft, bottomRight, rectangleColor, 1, 8, 0);
+            gui->showImage(dpmInitializationImage);
+
+            /*for (j = 0; j < comp->pnum; j++){
+                int trackerId = numTrackers;
+                CvRect *add = new CvRect;
+                add->x = comp->part[j].rect.x;
+                add->y = comp->part[j].rect.y;
+                add->width = comp->part[j].rect.width;
+                add->height = comp->part[j].rect.height;
+                addTrackerInfo(frameCount, -1, add);
+                createTLD(rectangles[trackerId], ccv_tld_params, trackerId);
+             }*/
+        ccv_array_free(seq);
+        }
+    }
+
+    ccv_matrix_free(dpmImage);
+
+    gui->setMouseHandler();
+    char videoKey = gui->getKey();
 
     while (videoKey != 'p'){
         if (videoKey == 'q')
@@ -77,7 +156,7 @@ bool Main::doWork() {
         if (videoKey == 'a')
             initializeTracking(img, ccv_tld_params);
         gui->setMouseHandler();
-        videoKey = gui->getVideoKey();
+        videoKey = gui->getKey();
     }
 
     bool reuseFrameOnce = false;
@@ -87,7 +166,7 @@ bool Main::doWork() {
     {
         cvReleaseImage(&img);
 
-        imagePath = resultsDirectory;
+        imagePath = videoPath;
         memset(num, 0, 64);
         sprintf(num, "%05d", frameCount);
         imagePath += QString(num).toStdString();
@@ -103,32 +182,26 @@ bool Main::doWork() {
         frameCount++;
 
         for (int i = 0; i < numTrackers; i++){
+            if (trackers[i] != NULL){
             trackerSems[i]->release();
-        }
-
-        for (int i = 0; i < numTrackers; i++){
             mainSems[i]->acquire();
+            }
         }
-
 
         for (int i = 0; i < numGroups; i++){
             groups[i]->push_back(0);
         }
 
-        int countMissed = 0;
-
         for (int i = 0; i < numTrackers; i++){
 
-            if (trackers[i]->found()) {
+            if (trackers[i] != NULL && trackers[i]->found()) {
                 struct colors* c = groupColors[trackersToGroupMap[i]];
                 CvScalar rectangleColor = CV_RGB(c->r, c->g, c->b);
                 CvPoint topLeft = cvPoint(rectangles[i]->x, rectangles[i]->y);
                 CvPoint bottomRight = cvPoint(rectangles[i]->x + rectangles[i]->width, rectangles[i]->y + rectangles[i]->height);
-                cvRectangle(img, topLeft, bottomRight, rectangleColor, 8, 8, 0);
+                cvRectangle(img, topLeft, bottomRight, rectangleColor, 1, 8, 0);
                 std::vector<int>* currGroup = groups[trackersToGroupMap[i]];
                 (*currGroup)[currGroup->size() - 1]++;
-            } else {
-                countMissed++;
             }
 
         }
@@ -138,12 +211,12 @@ bool Main::doWork() {
         y = 0;
 
         gui->showImage(img);
-        gui->setMouseHandler();
+       // gui->setMouseHandler();
 
-        videoKey = gui->getVideoKey();
+        videoKey = gui->getKey();
 
         while (videoKey == 'p') {
-            char newKey = gui->getVideoKey();
+            char newKey = gui->getKey();
             if (newKey == 'a') {
                 videoKey = 'a';
             }
@@ -152,25 +225,35 @@ bool Main::doWork() {
             }
             if (newKey == 'i')
                 videoKey = 'i';
+            if (newKey == 'd')
+                videoKey = 'd';
             if (newKey == 'p') break;
         }
         if (videoKey == 'i'){
             analysis();
-            gui->setMouseHandler();
-            videoKey = gui->getVideoKey();
+            //gui->setMouseHandler();
+            videoKey = gui->getKey();
             while (videoKey != 'a' && videoKey != 'p' && videoKey != 'q') {
-                gui->setMouseHandler();
-                videoKey = gui->getVideoKey();
+                //gui->setMouseHandler();
+                videoKey = gui->getKey();
             }
         }
         while(videoKey == 'a')
         {
             initializeTracking(img, ccv_tld_params);
-            gui->setMouseHandler();
-            videoKey = gui->getVideoKey();
+            //gui->setMouseHandler();
+            videoKey = gui->getKey();
             while (videoKey != 'a' && videoKey != 'q' && videoKey != 'p')
-                 videoKey = gui->getVideoKey();
+                 videoKey = gui->getKey();
             if (videoKey == 'p' || videoKey == 'q') break;
+        }
+        if (videoKey == 'd'){
+            bool ok;
+            QWidget w;
+            QString number = QInputDialog::getText(&w, QString("Tracker to delete"),QString("Enter tracker number:"), QLineEdit::Normal,"", &ok);
+            int trackerToDelete = number.toInt();
+            deleteTracker(trackerToDelete);
+
         }
 
         if(videoKey == 'q') {
@@ -179,8 +262,9 @@ bool Main::doWork() {
 
     }
 
-    //do memory cleanup of x/y
-
+    //do memory cleanup of x/y and release image
+    ccv_drain_cache();
+    ccv_dpm_mixture_model_free(model);
     ccv_disable_cache();
     return true;
 }
@@ -301,21 +385,24 @@ void Main::initializeTracking(IplImage *img, const ccv_tld_param_t ccv_tld_param
 
     createTLD(rectangles[trackerId], ccv_tld_params, trackerId);
 
-    if (saveIni){
-        QString trackerString = QString("tracker") + QString::number(trackerId);
-        trackerString += QString("/");
-        settingsOut->setValue(trackerString + QString("startFrame"), QVariant(frameCount));
-        settingsOut->setValue(trackerString + QString("endFrame"), -1 );
-        settingsOut->setValue(trackerString + QString("x"), add->x);
-        settingsOut->setValue(trackerString + QString("y"), add->y);
-        settingsOut->setValue(trackerString + QString("width"), add->width);
-        settingsOut->setValue(trackerString + QString("height"), add->height);
-        settingsOut->sync();
-    }
-
     trackerId++;
     gui->showImage(img);
     cvReleaseImage(&img0);
+}
+
+void Main::deleteTracker(int i){
+
+    if (trackers[i] != NULL && i < numTrackers){
+    trackers[i]->trackingComplete();
+    trackerSems[i]->release();
+    trackers[i]->wait();
+    delete trackers[i];
+    delete trackerSems[i];
+    delete mainSems[i];
+    delete rectangles[i];
+    trackers[i] = NULL;
+    }
+
 }
 
 /* Function: deleteTrackers()
@@ -325,14 +412,8 @@ void Main::initializeTracking(IplImage *img, const ccv_tld_param_t ccv_tld_param
 
 void Main::deleteTrackersAndGroups(){
 
-    for (int i = 0; i < numTrackers; i++){
-        trackers[i]->trackingComplete();
-        trackerSems[i]->release();
-        trackers[i]->wait();
-        delete trackers[i];
-        delete trackerSems[i];
-        delete mainSems[i];
-        delete rectangles[i];
+    for (int i = 0; i < numTrackers && trackers[i] != NULL; i++){
+        deleteTracker(i);
     }
 
     for (int i = 0; i < groups.size(); i++){
@@ -345,10 +426,7 @@ void Main::deleteTrackersAndGroups(){
 Main::~Main(){
 
     deleteTrackersAndGroups();
-    cvReleaseImage(&graphImage);
-    imAcqFree(imAcq);
     delete gui;
-    delete textMutex;
     if (settingsOut != NULL && saveIni)
         delete settingsOut;
 
@@ -356,43 +434,7 @@ Main::~Main(){
 
 void Main::initGui(int videoX, int videoY){
 
-    imAcqInit(imAcq);
     gui->initVideoWindow(videoX, videoY);
 
 }
 
-/*
-    const ccv_tld_param_t ccv_tld_params = {
-        .win_size = {
-            settings->win_size_width,
-            settings->win_size_height,
-        },
-        .level = settings->level,
-        .min_forward_backward_error = settings->min_forward_backward_error,
-        .min_eigen = settings->min_eigen,
-        .min_win = settings->min_win,
-        .interval = settings->interval,
-        .shift = settings->shift,
-        .top_n = settings->top_n,
-        .rotation = settings->rotation,
-        .include_overlap = settings->include_overlap,
-        .exclude_overlap = settings->exclude_overlap,
-        .structs = settings->structs,
-        .features = settings->features,
-        .validate_set = settings->validate_set,
-        .nnc_same = settings->nnc_same,
-        .nnc_thres = settings->nnc_thres,
-        .nnc_verify = settings->nnc_verify,
-        .nnc_beyond = settings->nnc_beyond,
-        .nnc_collect = settings->nnc_collect,
-        .bad_patches = settings->bad_patches,
-        .new_deform = settings->new_deform,
-        .track_deform = settings->track_deform,
-        .new_deform_angle = settings->new_deform_angle,
-        .track_deform_angle = settings->track_deform_angle,
-        .new_deform_scale = settings->new_deform_scale,
-        .track_deform_scale = settings->track_deform_scale,
-        .new_deform_shift = settings->new_deform_shift,
-        .track_deform_shift = settings->track_deform_shift,
-    };
-*/

@@ -56,7 +56,7 @@ void ConfigDialog::changeEvent(QEvent *e)
 
 void ConfigDialog::on_pushButton_loadVideo_clicked()
 {
-    QString file = QFileDialog::getOpenFileName(this, tr("Select video file"),
+    QString file = QFileDialog::getExistingDirectory(this, tr("Select directory containing video images"),
                    QDir::currentPath());
     ui->videoPath->setText(file);
 
@@ -91,8 +91,12 @@ void ConfigDialog::on_buttonBox_accepted()
     m_settings->m_saveResults = ui->saveResults->isChecked();
     m_settings->m_saveIni = ui->saveIni->isChecked();
 
-    if(!ui->videoPath->text().isEmpty())
+    if(!ui->videoPath->text().isEmpty()){
         m_settings->m_videoPath = ui->videoPath->text().toStdString();
+        if (m_settings->m_videoPath[m_settings->m_videoPath.length() - 1] != '/'){
+            m_settings->m_videoPath += std::string("/");
+    }
+    }
     else
         m_settings->m_videoPath = "";
 

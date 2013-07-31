@@ -13,14 +13,7 @@ Config::~Config() {}
 
 int Config::configure(Main *main)
 {
-    ImAcq *imAcq = main->imAcq;
 
-    imAcq->method = m_settings.m_method;
-    imAcq->imgPath = (m_settings.m_videoPath.empty()) ? NULL : m_settings.m_videoPath.c_str();
-    imAcq->lastFrame = m_settings.m_lastFrame;
-    imAcq->currentFrame = m_settings.m_startFrame;
-    imAcq->camNo = m_settings.m_camNo;
-    imAcq->fps = m_settings.m_fps;
     main->videoPath = m_settings.m_videoPath;
     main->loadIni = m_settings.m_loadIni;
     main->iniPath = m_settings.m_iniPath;

@@ -7,7 +7,6 @@
 
 #include <libconfig.h++>
 
-#include "ImAcq.h"
 #include "Settings.h"
 #include "Main.h"
 

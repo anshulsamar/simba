@@ -54,7 +54,7 @@
            <item>
             <widget class="QGroupBox" name="loadVideo">
              <property name="title">
-              <string>Load Video</string>
+              <string>Load Image Folder</string>
              </property>
              <property name="checkable">
               <bool>true</bool>
@@ -66,14 +66,14 @@
               <item>
                <widget class="QLabel" name="label_modelPath_2">
                 <property name="text">
-                 <string>Video</string>
+                 <string>Images</string>
                 </property>
                </widget>
               </item>
               <item>
                <widget class="QLineEdit" name="videoPath">
                 <property name="text">
-                 <string>/Users/Anshul/Desktop/Track/Build/Videos/video.mpg</string>
+                 <string>/Users/Anshul/Desktop/Track/Build/Videos/Images/</string>
                 </property>
                </widget>
               </item>

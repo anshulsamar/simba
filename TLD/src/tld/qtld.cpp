@@ -49,6 +49,8 @@ int main(int argc, char **argv)
    double desktopHeight = desktop->height();
    double desktopWidth = desktop->width();
 
+   std::cout << QString::number(desktopHeight).toStdString() + QString(" ").toStdString() + QString::number(desktopWidth).toStdString() << std::endl;
+
    //Loading "Application" Image
 
    QGraphicsScene scene;
@@ -86,19 +88,29 @@ int main(int argc, char **argv)
 
         //Window formatting, creation, and sizing
 
-        VideoCapture cap(settings->m_videoPath);
-        if (!cap.isOpened())
+        std::string imagePath = settings->m_videoPath;
+        char num[64];
+        memset(num, 0, 64);
+        sprintf(num, "%05d", 1);
+        imagePath += QString(num).toStdString();
+        imagePath += std::string(".png");
+
+        IplImage *img = cvLoadImage(imagePath.c_str());
+        if (!img)
             return EXIT_FAILURE;
 
-        double videoWidth = cap.get(CV_CAP_PROP_FRAME_WIDTH);
-        double videoHeight = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
+        double videoWidth = img->height;
+        double videoHeight = img->width;
 
         double videoX = desktopWidth/2 - videoWidth/2;
         double videoY = desktopHeight/2 - videoHeight/2;
 
+           std::cout << QString::number(videoHeight).toStdString() + QString(" ").toStdString() + QString::number(videoWidth).toStdString() << std::endl;
+           std::cout << QString::number(videoX).toStdString() + QString(" ").toStdString() + QString::number(videoY).toStdString() << std::endl;
+
         main->initGui(videoX, videoY);
 
-        if (!main->doWork()){
+        if (!main->doWork(settings)){
             return EXIT_FAILURE;
         }
 

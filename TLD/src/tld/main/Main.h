@@ -7,7 +7,6 @@
 #include <vector>
 #include <QTextEdit>
 #include <QMutex>
-#include "ImAcq.h"
 #include "Gui.h"
 #include "Settings.h"
 #include "tracker.h"
@@ -27,7 +26,6 @@ enum Retval
 class Main
 {
 public:
-    ImAcq *imAcq;
     IplImage *graphImage;
     tld::Gui *gui;
     int graphHeight;
@@ -62,13 +60,11 @@ public:
         frameCount = 1;
         x = 0;
         y = 0;
-
-        imAcq = imAcqAlloc();
         gui = new Gui();
         textMutex = new QMutex;
     }
     ~Main();
-    bool doWork();
+    bool doWork(Settings* settings);
     void addTrackerInfo(int startFrame, int endFrame, CvRect* add);
     void initGui(int videoX, int videoY);
 
@@ -79,6 +75,7 @@ private:
     void deleteTrackersAndGroups();
     bool loadInitializationFile();
     void analysis();
+    void deleteTracker(int i);
 
     std::vector<Tracker *> trackers;
     std::vector<CvRect*> rectangles;
