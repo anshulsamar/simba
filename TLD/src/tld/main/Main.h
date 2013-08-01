@@ -76,6 +76,8 @@ private:
     bool loadInitializationFile();
     void analysis();
     void deleteTracker(int i);
+    void doDpm(IplImage* img, std::string imagePath, ccv_tld_param_t ccv_tld_params);
+    void doBBF(IplImage* img, std::string imagePath, ccv_tld_param_t ccv_tld_params);
 
     std::vector<Tracker *> trackers;
     std::vector<CvRect*> rectangles;

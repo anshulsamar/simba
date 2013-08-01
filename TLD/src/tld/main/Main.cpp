@@ -88,7 +88,6 @@ bool Main::doWork(Settings* settings) {
     sprintf(num, "%05d", frameCount);
     imagePath += QString(num).toStdString();
     imagePath += std::string(".png");
-    std::cout << imagePath << std::endl;
 
     IplImage *img = cvLoadImage(imagePath.c_str());
     if (!img)
@@ -102,50 +101,6 @@ bool Main::doWork(Settings* settings) {
 
     ccv_enable_default_cache();
     ccv_read(imagePath.c_str(), &x, CCV_IO_GRAY | CCV_IO_ANY_FILE);
-
-    IplImage* dpmInitializationImage = (IplImage* )cvClone(img);
-    int i, j;
-    ccv_dense_matrix_t* dpmImage = 0;
-    ccv_read(imagePath.c_str(), &dpmImage, CCV_IO_ANY_FILE);
-    ccv_dpm_mixture_model_t* model = ccv_load_dpm_mixture_model("/Users/Anshul/Desktop/FrankLab/ccv/samples/pedestrian.m");
-
-    ccv_array_t* seq = ccv_dpm_detect_objects(dpmImage, &model, 1, ccv_dpm_default_params);
-    if (seq){
-        for (i = 0; i < seq->rnum; i++)
-        {
-            ccv_root_comp_t* comp = (ccv_root_comp_t*)ccv_array_get(seq, i);
-
-            int trackerId = numTrackers;
-            CvRect *add = new CvRect;
-            add->x = comp->rect.x;
-            add->y = comp->rect.y;
-            add->width = comp->rect.width;
-            add->height = comp->rect.height;
-            addTrackerInfo(frameCount, -1, add);
-            createTLD(rectangles[trackerId], ccv_tld_params, trackerId);
-
-            struct colors* c = groupColors[trackersToGroupMap[i]];
-            CvScalar rectangleColor = CV_RGB(c->r, c->g, c->b);
-            CvPoint topLeft = cvPoint(rectangles[i]->x, rectangles[i]->y);
-            CvPoint bottomRight = cvPoint(rectangles[i]->x + rectangles[i]->width, rectangles[i]->y + rectangles[i]->height);
-            cvRectangle(dpmInitializationImage, topLeft, bottomRight, rectangleColor, 1, 8, 0);
-            gui->showImage(dpmInitializationImage);
-
-            /*for (j = 0; j < comp->pnum; j++){
-                int trackerId = numTrackers;
-                CvRect *add = new CvRect;
-                add->x = comp->part[j].rect.x;
-                add->y = comp->part[j].rect.y;
-                add->width = comp->part[j].rect.width;
-                add->height = comp->part[j].rect.height;
-                addTrackerInfo(frameCount, -1, add);
-                createTLD(rectangles[trackerId], ccv_tld_params, trackerId);
-             }*/
-        ccv_array_free(seq);
-        }
-    }
-
-    ccv_matrix_free(dpmImage);
 
     gui->setMouseHandler();
     char videoKey = gui->getKey();
@@ -184,9 +139,15 @@ bool Main::doWork(Settings* settings) {
         for (int i = 0; i < numTrackers; i++){
             if (trackers[i] != NULL){
             trackerSems[i]->release();
+            }
+        }
+
+        for (int i = 0; i < numTrackers; i++){
+            if (trackers[i] != NULL){
             mainSems[i]->acquire();
             }
         }
+
 
         for (int i = 0; i < numGroups; i++){
             groups[i]->push_back(0);
@@ -227,6 +188,10 @@ bool Main::doWork(Settings* settings) {
                 videoKey = 'i';
             if (newKey == 'd')
                 videoKey = 'd';
+            if (newKey == 'r')
+                videoKey = 'r';
+            if (newKey == 'b')
+                videoKey = 'b';
             if (newKey == 'p') break;
         }
         if (videoKey == 'i'){
@@ -252,10 +217,18 @@ bool Main::doWork(Settings* settings) {
             QWidget w;
             QString number = QInputDialog::getText(&w, QString("Tracker to delete"),QString("Enter tracker number:"), QLineEdit::Normal,"", &ok);
             int trackerToDelete = number.toInt();
-            deleteTracker(trackerToDelete);
-
+            if (ok) deleteTracker(trackerToDelete);
+            while (videoKey != 'a' && videoKey != 'p' && videoKey != 'q') {
+                //gui->setMouseHandler();
+                videoKey = gui->getKey();
+            }
         }
-
+        if (videoKey == 'r'){
+            doDpm(img, imagePath, ccv_tld_params);
+        }
+        if (videoKey == 'b'){
+            doBBF(img, imagePath, ccv_tld_params);
+        }
         if(videoKey == 'q') {
             break;
         }
@@ -263,10 +236,117 @@ bool Main::doWork(Settings* settings) {
     }
 
     //do memory cleanup of x/y and release image
-    ccv_drain_cache();
-    ccv_dpm_mixture_model_free(model);
     ccv_disable_cache();
     return true;
+}
+
+void Main::doBBF(IplImage* img, std::string imagePath, ccv_tld_param_t ccv_tld_params){
+
+    IplImage* bbfInitializationImage = (IplImage* )cvClone(img);
+    //ccv_enable_default_cache();
+    ccv_dense_matrix_t* bbfImage = 0;
+    ccv_bbf_classifier_cascade_t* cascade = ccv_load_bbf_classifier_cascade("/Users/Anshul/Desktop/FrankLab/ccv/samples/face");
+
+    ccv_read(imagePath.c_str(), &bbfImage, CCV_IO_GRAY | CCV_IO_ANY_FILE);
+
+    if (bbfImage != 0)
+    {
+        ccv_array_t* seq = ccv_bbf_detect_objects(bbfImage, &cascade, 1, ccv_bbf_default_params);
+        if (seq->rnum == 0)     std::cout << "nothing found by bbf" << std::endl;
+        for (int i = 0; i < seq->rnum; i++)
+        {
+            ccv_comp_t* comp = (ccv_comp_t*)ccv_array_get(seq, i);
+
+            int trackerId = numTrackers;
+            CvRect *add = new CvRect;
+            add->x = comp->rect.x;
+            add->y = comp->rect.y;
+            add->width = comp->rect.width;
+            add->height = comp->rect.height;
+            addTrackerInfo(frameCount, -1, add);
+
+            CvScalar black = CV_RGB(0, 0, 0);
+            CvPoint topLeftBlack = cvPoint(add->x, add->y);
+            CvPoint bottomRightBlack = cvPoint(add->x + add->width, add->y + add->height);
+            cvRectangle(bbfInitializationImage, topLeftBlack, bottomRightBlack, black, 3, 8, 0);
+            gui->showImage(bbfInitializationImage);
+
+            createTLD(rectangles[trackerId], ccv_tld_params, trackerId);
+
+            struct colors* c = groupColors[trackersToGroupMap[i]];
+            CvScalar rectangleColor = CV_RGB(c->r, c->g, c->b);
+            CvPoint topLeft = cvPoint(rectangles[i]->x, rectangles[i]->y);
+            CvPoint bottomRight = cvPoint(rectangles[i]->x + rectangles[i]->width, rectangles[i]->y + rectangles[i]->height);
+            cvRectangle(bbfInitializationImage, topLeft, bottomRight, rectangleColor, 1, 8, 0);
+            gui->showImage(bbfInitializationImage);
+
+        }
+        ccv_array_free(seq);
+    }
+    //ccv_disable_cache();
+
+    //free image clone of bbfinitialization image
+    //understand caching
+
+}
+
+void Main::doDpm(IplImage* img, std::string imagePath, ccv_tld_param_t ccv_tld_params){
+
+    //ccv_enable_default_cache();
+
+    IplImage* dpmInitializationImage = (IplImage* )cvClone(img);
+    int i, j;
+
+    ccv_dense_matrix_t* dpmImage = 0;
+    ccv_read(imagePath.c_str(), &dpmImage, CCV_IO_ANY_FILE);
+    ccv_dpm_mixture_model_t* model = ccv_load_dpm_mixture_model("/Users/Anshul/Desktop/FrankLab/ccv/samples/pedestrian.m");
+
+    ccv_array_t* seq = ccv_dpm_detect_objects(dpmImage, &model, 1, ccv_dpm_default_params);
+    if (seq){
+        for (i = 0; i < seq->rnum; i++)
+        {
+            ccv_root_comp_t* comp = (ccv_root_comp_t*)ccv_array_get(seq, i);
+
+            int trackerId = numTrackers;
+            CvRect *add = new CvRect;
+            add->x = comp->rect.x;
+            add->y = comp->rect.y;
+            add->width = comp->rect.width;
+            add->height = comp->rect.height;
+            addTrackerInfo(frameCount, -1, add);
+
+            CvScalar black = CV_RGB(0, 0, 0);
+            CvPoint topLeftBlack = cvPoint(add->x, add->y);
+            CvPoint bottomRightBlack = cvPoint(add->x + add->width, add->y + add->height);
+            cvRectangle(dpmInitializationImage, topLeftBlack, bottomRightBlack, black, 3, 8, 0);
+            gui->showImage(dpmInitializationImage);
+
+            createTLD(rectangles[trackerId], ccv_tld_params, trackerId);
+
+            struct colors* c = groupColors[trackersToGroupMap[i]];
+            CvScalar rectangleColor = CV_RGB(c->r, c->g, c->b);
+            CvPoint topLeft = cvPoint(rectangles[i]->x, rectangles[i]->y);
+            CvPoint bottomRight = cvPoint(rectangles[i]->x + rectangles[i]->width, rectangles[i]->y + rectangles[i]->height);
+            cvRectangle(dpmInitializationImage, topLeft, bottomRight, rectangleColor, 1, 8, 0);
+            gui->showImage(dpmInitializationImage);
+        }
+
+            /*for (j = 0; j < comp->pnum; j++){
+                int trackerId = numTrackers;
+                CvRect *add = new CvRect;
+                add->x = comp->part[j].rect.x;
+                add->y = comp->part[j].rect.y;
+                add->width = comp->part[j].rect.width;
+                add->height = comp->part[j].rect.height;
+                addTrackerInfo(frameCount, -1, add);
+                createTLD(rectangles[trackerId], ccv_tld_params, trackerId);
+             }*/
+    }
+    ccv_array_free(seq);
+    //ccv_drain_cache();
+    ccv_dpm_mixture_model_free(model);
+    ccv_matrix_free(dpmImage);
+
 }
 
 void Main::analysis(){
@@ -289,14 +369,12 @@ void Main::createTLD(CvRect *rect, const ccv_tld_param_t ccv_tld_params, int tra
     Tracker* t = new Tracker(frameCount, trackerId, videoPath, trackerSems[trackerId], mainSems[trackerId], rectangles[trackerId], startFrames[trackerId], endFrames[trackerId], ccv_tld_params, saveResults, resultsDirectory, &x, &y);
     trackers.push_back(t);
 
-    bool ok;
+    bool ok = false;
     QWidget w;
     QString number = QInputDialog::getText(&w, QString("Group Number"),QString("Enter group number:"), QLineEdit::Normal,"", &ok);
     int groupNumber = number.toInt();
 
-    if (!loadIni){
     while (!ok){
-        analytics->append("You must provide a group number.");
         number = QInputDialog::getText(&w, QString("Enter Group Number"),QString("Group Number:"), QLineEdit::Normal,"", &ok);
         groupNumber = number.toInt();
     }
@@ -333,7 +411,6 @@ void Main::createTLD(CvRect *rect, const ccv_tld_param_t ccv_tld_params, int tra
     }
     groupNumTrackers[groupNumber]++;
     trackersToGroupMap[trackerId] = groupNumber;
-    }
 
     t->start();
     numTrackers++;

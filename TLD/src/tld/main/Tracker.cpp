@@ -67,7 +67,7 @@ Tracker::Tracker(int frameCount, int trackerId, std::string videoPath, QSemaphor
     file = NULL;
 
    ccv_rect_t ccvBox = ccv_rect(rect->x, rect->y, rect->width, rect->height);
-   ccvtld = ccv_tld_new(*x, ccvBox, ccv_tld_params);
+   ccvtld = ccv_tld_new(*xPtr, ccvBox, ccv_tld_params);
 
 }
 
