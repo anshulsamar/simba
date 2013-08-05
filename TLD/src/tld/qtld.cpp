@@ -111,14 +111,6 @@ int main(int argc, char **argv)
           // std::cout << QString::number(videoHeight).toStdString() + QString(" ").toStdString() + QString::number(videoWidth).toStdString() << std::endl;
           // std::cout << QString::number(videoX).toStdString() + QString(" ").toStdString() + QString::number(videoY).toStdString() << std::endl;
 
-        main->initGui(videoX, videoY);
-
-        if (!main->doWork(settings)){
-            return EXIT_FAILURE;
-        }
-
-        delete main;
-
         IplImage *img2;
 
         int spacing = 50;
@@ -131,7 +123,7 @@ int main(int argc, char **argv)
         }
         double newVideoWidth = (newVideoHeight/videoHeight)*videoWidth;
 
-        double analyticsWidth = desktopWidth/5;
+        double analyticsWidth = desktopWidth/4;
         double analyticsHeight = desktopHeight * (4.0/5);
 
         double graphWidth = (desktopWidth/5)*3;
@@ -161,19 +153,26 @@ int main(int argc, char **argv)
         QString b("QWidget {background-color: black}\nQWidget {color: rgb(255, 255, 255)}\nQWidget {font: 14pt \"Source Sans Pro\"}");
         aWin->setStyleSheet(b);
         aWin->show();
-        aWin->append(QString("Track Learn Detect"));
+        aWin->insertHtml(QString("Track Learn Detect<br><br>"));
 
+        main->initGui(videoX, videoY);
 
-        Analyze *analyze = new Analyze();
-        analyze->initGui(desktopWidth, desktopHeight, img2, aWin);
-        if (!analyze->doWork(settings->m_resultsDirectory, img2))
+        /*if (!main->doWork(settings)){
+          return EXIT_FAILURE;
+        }
+
+        delete main;*/
+
+        Analyze *analyze = new Analyze(aWin, settings->m_resultsDirectory);
+
+        if (!analyze->doWork())
            return EXIT_FAILURE;
-
 
         aWin->close();
 
         delete analyze;
-
+        delete main;
+        delete aWin;
         delete settings;
     }
 

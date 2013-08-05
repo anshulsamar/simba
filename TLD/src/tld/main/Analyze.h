@@ -18,21 +18,28 @@ class Analyze
 public:
 
     tld::AnalyzeGui *analyzeGui;
-    QTextEdit* aWin;
 
-    Analyze() {
+    Analyze(QTextEdit* aWin, std::string resultsDirectory) {
         analyzeGui = new tld::AnalyzeGui();
         numGroups = 0;
         numTrackers = 0;
         frameCount = 1;
+        this->aWin = aWin;
+        this->resultsDirectory = resultsDirectory;
     }
     ~Analyze();
-    bool doWork(std::string resultsDirectory, IplImage *img);
-    void initGui(int videoX, int videoY, IplImage *img, QTextEdit* aWin);
-    void debugAnalyze();
-
+    bool doWork();
+    void initGui(int videoX, int videoY, IplImage *img);
 
 private:
+
+    void debugAnalyze();
+    bool groupInfo(std::string groupName);
+    long startFrame(int trackerId);
+    void getImage(long frame, std::string newImageName, int x, int y, int width, int height);
+    bool trackerInfo(std::string trackerName);
+
+    QTextEdit* aWin;
 
     std::map<std::string, int> trackerNameToId;
     std::map<std::string, int> groupNameToId;
@@ -41,6 +48,7 @@ private:
     std::map<int, int> trackersToGroupMap;
     std::vector< std::vector<int> > trackersPerGroup;
     std::vector< std::vector<std::string> > trackerResults;
+    std::vector<long> startFrames;
 
     struct colors {
         int r;
@@ -53,6 +61,8 @@ private:
     int numTrackers;
     long frameCount;
     int numGroups;
+
+    std::string resultsDirectory;
 };
 
 #endif /* Analyze_H_ */

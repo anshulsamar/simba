@@ -279,6 +279,8 @@ bool Main::doWork(Settings* settings) {
 
     std::string settingsFileName = resultsDirectory + "groupSettings.ini";
     FILE* file = fopen(settingsFileName.c_str(), "w");
+    //so technically what if it was incorrectly stopped in between/is this frame count right?
+    fprintf(file, "$s\nFrameCount=%ld", "[Info]", frameCount);
     fprintf(file, "%s\nNames=", "[GroupNames]");
     for (int i = 0; i < numGroups; i++){
        fprintf(file, "%s ", idToGroupName[i].c_str());

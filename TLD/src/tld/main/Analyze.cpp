@@ -36,18 +36,106 @@ extern "C" {
 using namespace tld;
 using namespace cv;
 
-std::map<int, int> trackersToGroupMap;
-std::vector< std::vector<int> > trackersPerGroup;
+//note frame initialiezd on is startFrame - 1
 
-struct colors {
-    int r;
-    int g;
-    int b;
-};
+void Analyze::getImage(long frame, std::string saveImage, int x, int y, int width, int height){
 
-std::vector< struct colors* > groupColors;
+    std::string imagePath = resultsDirectory;
+    char num[64];
+    memset(num, 0, 64);
+    sprintf(num, "%07ld", frame);
+    imagePath += QString(num).toStdString();
+    imagePath += std::string(".png");
 
-bool Analyze::doWork(std::string resultsDirectory, IplImage *img) {
+    //IplImage *img = cvLoadImage(imagePath.c_str());
+    //cv::Mat imgMat(img);
+
+    cv::Mat imgMat = imread(imagePath, 1);
+    cv::Mat imgROI;
+    imgROI = imgMat(Rect(x, y, width, height));
+
+    imwrite(saveImage, imgROI);
+
+
+}
+
+long Analyze::startFrame(int trackerId){
+
+    long sframe = 1;
+
+    std::vector< std::string > *v = &trackerResults[trackerId];
+
+    for (int i = 0; i < v->size(); i++){
+        std::cout << v->at(i) << std::endl;
+        if (v->at(i).compare("-") != 0)
+            break;
+        sframe++;
+    }
+
+    return sframe;
+
+}
+
+bool Analyze::trackerInfo(std::string trackerName){
+
+    int trackerId = trackerNameToId[trackerName];
+
+    double percentTotalFramesTrackerAppeared = 0;
+    long countDetected = 0;
+
+    std::vector< std::string > *v = &trackerResults[trackerId];
+
+    //careful with percentages because the first frame is never tracked. be careful with all frame stuff here, go over it
+
+    for (int i = 1; i < v->size(); i++){
+        std::cout << v->at(i) << std::endl;
+        if (v->at(i).compare("-") == 0)
+            continue;
+        countDetected++;
+    }
+
+    percentTotalFramesTrackerAppeared = (double)countDetected/v->size();
+    long framesTracked = v->size() - startFrame(trackerId);
+    double percentFramesTracked = (double)countDetected/framesTracked;
+
+    //Output: assuming 24 fps
+
+    std::string groupNameFormatted = "<b>" + trackerName + "</b>";
+    std::ostringstream s;
+    s << percentTotalFramesTrackerAppeared;
+    aWin->insertHtml(QString("<br><br>percent: ") + QString(s.str().c_str()));
+
+
+
+    return true;
+
+
+}
+
+bool Analyze::groupInfo(std::string groupName){
+
+    int groupId = groupNameToId[groupName];
+    std::string groupNameFormatted = "<b>" + groupName + "</b>";
+
+    aWin->insertHtml(QString(groupNameFormatted.c_str()));
+    std::string listOfTrackers;
+    for (int i = 0; i < trackersPerGroup[groupId].size(); i++){
+        listOfTrackers = listOfTrackers + std::string("<br>") + idToTrackerName[trackersPerGroup[groupId][i]] + ":" + QString::number(startFrame(trackersPerGroup[groupId][i])).toStdString();
+    }
+    aWin->insertHtml(QString(listOfTrackers.c_str()));
+
+    std::string imageNewName = resultsDirectory + "helloWorld.png";
+    long frame = 2;
+    getImage(frame, imageNewName, 0, 0, 100, 100);
+
+    aWin->insertHtml(QString("<img src=\"") + QString(imageNewName.c_str()) + QString("\">"));
+
+    return true;
+
+
+}
+
+bool Analyze::doWork() {
 
     std::string iniPath = resultsDirectory + "groupSettings.ini";
     std::ifstream infile(iniPath.c_str());
@@ -56,6 +144,12 @@ bool Analyze::doWork(std::string resultsDirectory, IplImage *img) {
         std::cerr << "Failed to open initialization file\n" << std::endl;
         return false;
     }
+
+    settingsIn->beginGroup("Info");
+    //is it ok that this is to long long instead of just long
+    frameCount = settingsIn->value("FrameCount").toLongLong();
+    settingsIn->endGroup();
+
     settingsIn->beginGroup("GroupNames");
     QString groupsString = settingsIn->value("Names").toString();
     settingsIn->endGroup();
@@ -104,8 +198,27 @@ bool Analyze::doWork(std::string resultsDirectory, IplImage *img) {
         numGroups++;
     }
 
-   debugAnalyze();
 
+
+    //groupInfo(idToGroupName[0]);
+    //groupInfo(idToGroupName[1]);
+    trackerInfo(idToTrackerName[0]);
+    //debugAnalyze();
+    aWin->append(">");
+
+    QString info = aWin->toPlainText();
+    QStringList commands = info.split(">");
+    QString command = commands[commands.size() - 1];
+
+    std::cout << command.toStdString() << std::endl;
+
+    bool ok;
+    QWidget w;
+    QString number = QInputDialog::getText(&w, QString("Tracker to delete"),QString("Enter tracker number:"), QLineEdit::Normal,"", &ok);
+    int trackerToDelete = number.toInt();
+
+
+   return true;
 
 
 
@@ -115,9 +228,9 @@ Analyze::~Analyze(){
 
 }
 
-void Analyze::initGui(int desktopWidth, int desktopHeight, IplImage* img, QTextEdit* aWin){
+void Analyze::initGui(int desktopWidth, int desktopHeight, IplImage* img){
 
-    this->aWin = aWin;
+    //this->aWin = aWin;
     //analyzeGui->initVideoWindow(desktopWidth, desktopHeight);
 
 }
