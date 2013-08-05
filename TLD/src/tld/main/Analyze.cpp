@@ -98,7 +98,8 @@ bool Analyze::trackerInfo(std::string trackerName){
     long framesTracked = v->size() - startFrame(trackerId);
     double percentFramesTracked = (double)countDetected/framesTracked;
 
-    //Output: assuming 24 fps
+    //Output: assuming 24 fps you can do some time based thing
+    //video is not proper time based
 
     std::string groupNameFormatted = "<b>" + trackerName + "</b>";
     std::ostringstream s;
@@ -132,6 +133,20 @@ bool Analyze::groupInfo(std::string groupName){
 
     return true;
 
+
+}
+
+std::string Analyze::getCommand(){
+
+    QString info = aWin->toHtml();
+    if (info.size() < 1) return "";
+    std::cout << "making string list" << std::endl;
+    QStringList commands = info.split(">");
+    if (commands.size() < 1) return "";
+    std::cout << "getting command" << std::endl;
+    QString command = commands[commands.size() - 1];
+    std::cout << "returning" << std::endl;
+    return command.toStdString();
 
 }
 
@@ -199,23 +214,36 @@ bool Analyze::doWork() {
     }
 
 
+    bool play = true;
+    long currFrame = 0; //make 0 once you add the first frame to the folder
+    std::string imagePath;
+    char num[64];
 
-    //groupInfo(idToGroupName[0]);
-    //groupInfo(idToGroupName[1]);
-    trackerInfo(idToTrackerName[0]);
-    //debugAnalyze();
     aWin->append(">");
+    std::cout << "appended the >" << std::endl;
 
-    QString info = aWin->toPlainText();
-    QStringList commands = info.split(">");
-    QString command = commands[commands.size() - 1];
+    std::string command;
 
-    std::cout << command.toStdString() << std::endl;
+        while (play){
+            currFrame++;
+            imagePath = resultsDirectory;
+            memset(num, 0, 64);
+            sprintf(num, "%07ld", currFrame);
+            imagePath += QString(num).toStdString();
+            imagePath += std::string(".png");
 
-    bool ok;
-    QWidget w;
-    QString number = QInputDialog::getText(&w, QString("Tracker to delete"),QString("Enter tracker number:"), QLineEdit::Normal,"", &ok);
-    int trackerToDelete = number.toInt();
+            cv::Mat img = imread(imagePath.c_str(), 1);
+            cv::Mat imgResized;
+            resize(img, imgResized, Size(), fx, fy, CV_INTER_AREA);
+            //do error checking here
+            analyzeGui->showImage(imgResized, mainWindowName);
+            if (currFrame == 10)currFrame = 1;
+        }
+
+
+
+
+
 
 
    return true;
@@ -228,10 +256,9 @@ Analyze::~Analyze(){
 
 }
 
-void Analyze::initGui(int desktopWidth, int desktopHeight, IplImage* img){
+void Analyze::initGui(int mainVideoX, int mainVideoY, int secondaryVideoX, int secondaryVideoY, std::string mainWindowName, std::string secondaryWindowName){
 
-    //this->aWin = aWin;
-    //analyzeGui->initVideoWindow(desktopWidth, desktopHeight);
+    analyzeGui->initVideoWindow(mainVideoX, mainVideoY, secondaryVideoX, secondaryVideoY, mainWindowName, secondaryWindowName);
 
 }
 

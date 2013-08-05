@@ -14,23 +14,12 @@ class AnalyzeGui
 public:
     AnalyzeGui();
     ~AnalyzeGui();
-    void initVideoWindow(int videoX, int videoY);
-    void showImage(IplImage *image);
-    char getKey();
-    char getVideoKey();
-    void setWidthHeight(int width, int height);
-    void setMouseHandler();
-    std::string windowName();
+    void initVideoWindow(int mainVideoX, int mainVideoY, int secondaryVideoX, int secondaryVideoY, std::string mainWindowName, std::string secondaryWindowName);
+    void showImage(cv::Mat image, std::string windowName);
+char getKey();
 
 private:
-    std::string m_window_name;
-    CvFont font;
-    struct info {
-        char key;
-        int width;
-        int height;
-    };
-    info i;
+
 };
 
 /**

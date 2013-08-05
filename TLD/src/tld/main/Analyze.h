@@ -19,25 +19,33 @@ public:
 
     tld::AnalyzeGui *analyzeGui;
 
-    Analyze(QTextEdit* aWin, std::string resultsDirectory) {
+    Analyze(double fx, double fy, QTextEdit* aWin, std::string resultsDirectory, std::string mainWindowName, std::string secondaryWindowName) {
         analyzeGui = new tld::AnalyzeGui();
         numGroups = 0;
         numTrackers = 0;
         frameCount = 1;
         this->aWin = aWin;
         this->resultsDirectory = resultsDirectory;
+        this->mainWindowName = mainWindowName;
+        this->secondaryWindowName = secondaryWindowName;
+        this->fx = fx;
+        this->fy = fy;
     }
     ~Analyze();
     bool doWork();
-    void initGui(int videoX, int videoY, IplImage *img);
+    void initGui(int mainVideoX, int mainVideoY, int secondaryVideoX, int secondaryVideoY, std::string mainWindowName, std::string secondaryWindowName);
+
 
 private:
 
     void debugAnalyze();
+
+
     bool groupInfo(std::string groupName);
     long startFrame(int trackerId);
     void getImage(long frame, std::string newImageName, int x, int y, int width, int height);
     bool trackerInfo(std::string trackerName);
+    std::string getCommand();
 
     QTextEdit* aWin;
 
@@ -63,6 +71,11 @@ private:
     int numGroups;
 
     std::string resultsDirectory;
+    std::string mainWindowName;
+    std::string secondaryWindowName;
+
+    double fx;
+    double fy;
 };
 
 #endif /* Analyze_H_ */

@@ -115,22 +115,11 @@ int main(int argc, char **argv)
 
         int spacing = 50;
 
-        double newVideoHeight = videoHeight;
-        double dif = desktopHeight/newVideoHeight;
-        while (dif < 4){
-            newVideoHeight *= (4.0/5);
-            dif = desktopHeight/newVideoHeight;
-        }
-        double newVideoWidth = (newVideoHeight/videoHeight)*videoWidth;
-
         double analyticsWidth = desktopWidth/4;
         double analyticsHeight = desktopHeight * (4.0/5);
 
         double graphWidth = (desktopWidth/5)*3;
-        double graphHeight = analyticsHeight - newVideoHeight - spacing;
-
-        double commandWidth = graphWidth + analyticsWidth - spacing*2;
-        double commandHeight = newVideoHeight;
+        double graphHeight = analyticsHeight - 100 - spacing;
 
         double windowWidth = analyticsWidth + graphWidth + spacing;
         double windowHeight = analyticsHeight;
@@ -141,10 +130,6 @@ int main(int argc, char **argv)
         double analyticsY = windowY;
         double graphX = analyticsX + analyticsWidth + spacing;
         double graphY = analyticsY;
-        double commandX = graphX;
-        double commandY = graphY + graphHeight + spacing;
-        double newVideoX = commandX + commandWidth + spacing;
-        double newVideoY = commandY;
 
         QTextEdit* aWin = new QTextEdit;
         aWin->resize(analyticsWidth, analyticsHeight);
@@ -153,9 +138,9 @@ int main(int argc, char **argv)
         QString b("QWidget {background-color: black}\nQWidget {color: rgb(255, 255, 255)}\nQWidget {font: 14pt \"Source Sans Pro\"}");
         aWin->setStyleSheet(b);
         aWin->show();
-        aWin->insertHtml(QString("Track Learn Detect<br><br>"));
+        aWin->append(QString("Track Learn Detect\n"));
 
-        main->initGui(videoX, videoY);
+        main->initGui(10, 10);
 
         /*if (!main->doWork(settings)){
           return EXIT_FAILURE;
@@ -163,7 +148,11 @@ int main(int argc, char **argv)
 
         delete main;*/
 
-        Analyze *analyze = new Analyze(aWin, settings->m_resultsDirectory);
+        std::string mainWindowName = "View One";
+        std::string secondaryWindowName = "View Two";
+        Analyze *analyze = new Analyze(.3, .3, aWin, settings->m_resultsDirectory, mainWindowName, secondaryWindowName);
+
+        analyze->initGui(500, 500, 800, 800, mainWindowName, secondaryWindowName);
 
         if (!analyze->doWork())
            return EXIT_FAILURE;
