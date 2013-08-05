@@ -121,11 +121,56 @@ int main(int argc, char **argv)
 
         IplImage *img2;
 
+        int spacing = 50;
+
+        double newVideoHeight = videoHeight;
+        double dif = desktopHeight/newVideoHeight;
+        while (dif < 4){
+            newVideoHeight *= (4.0/5);
+            dif = desktopHeight/newVideoHeight;
+        }
+        double newVideoWidth = (newVideoHeight/videoHeight)*videoWidth;
+
+        double analyticsWidth = desktopWidth/5;
+        double analyticsHeight = desktopHeight * (4.0/5);
+
+        double graphWidth = (desktopWidth/5)*3;
+        double graphHeight = analyticsHeight - newVideoHeight - spacing;
+
+        double commandWidth = graphWidth + analyticsWidth - spacing*2;
+        double commandHeight = newVideoHeight;
+
+        double windowWidth = analyticsWidth + graphWidth + spacing;
+        double windowHeight = analyticsHeight;
+        double windowX = desktopWidth/2 - windowWidth/2;
+        double windowY = desktopHeight/2 - windowHeight/2;
+
+        double analyticsX = windowX;
+        double analyticsY = windowY;
+        double graphX = analyticsX + analyticsWidth + spacing;
+        double graphY = analyticsY;
+        double commandX = graphX;
+        double commandY = graphY + graphHeight + spacing;
+        double newVideoX = commandX + commandWidth + spacing;
+        double newVideoY = commandY;
+
+        QTextEdit* aWin = new QTextEdit;
+        aWin->resize(analyticsWidth, analyticsHeight);
+        aWin->setWindowTitle("Analytics and Results");
+        aWin->move(analyticsX, analyticsY);
+        QString b("QWidget {background-color: black}\nQWidget {color: rgb(255, 255, 255)}\nQWidget {font: 14pt \"Source Sans Pro\"}");
+        aWin->setStyleSheet(b);
+        aWin->show();
+        aWin->append(QString("Track Learn Detect"));
+
+
         Analyze *analyze = new Analyze();
-        analyze->initGui(desktopWidth, desktopHeight, img2);
+        analyze->initGui(desktopWidth, desktopHeight, img2, aWin);
         if (!analyze->doWork(settings->m_resultsDirectory, img2))
            return EXIT_FAILURE;
 
+
+        aWin->close();
 
         delete analyze;
 

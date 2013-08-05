@@ -260,10 +260,10 @@ bool Main::doWork(Settings* settings) {
     for (int i = 0; i < numGroups; i++){
 
         std::string filename = resultsDirectory + idToGroupName[i] + ".txt";
-        std::cout << filename << std::endl;
+        //std::cout << filename << std::endl;
         FILE* file = fopen(filename.c_str(), "w");
         if (file == NULL){
-            std::cout << "Error in opening new file to write. Continuing without saving results." << std::endl;
+            //std::cout << "Error in opening new file to write. Continuing without saving results." << std::endl;
         }
 
         fprintf(file, "%s", idToGroupName[i].c_str());
@@ -279,16 +279,19 @@ bool Main::doWork(Settings* settings) {
 
     std::string settingsFileName = resultsDirectory + "groupSettings.ini";
     FILE* file = fopen(settingsFileName.c_str(), "w");
-    fprintf(file, "%s", "[GroupNames]");
+    fprintf(file, "%s\nNames=", "[GroupNames]");
     for (int i = 0; i < numGroups; i++){
-       fprintf(file, "\n%s", idToGroupName[i].c_str());
+       fprintf(file, "%s ", idToGroupName[i].c_str());
     }
+
     for (int i = 0; i < numGroups; i++){
         fprintf(file, "\n[%s]", idToGroupName[i].c_str());
-        fprintf(file, "\nRed:%d", groupColors[i]->r);
-        fprintf(file, "\nGreen:%d", groupColors[i]->g);
-        fprintf(file, "\nBlue:%d", groupColors[i]->b);
+        fprintf(file, "\nRed=%d", groupColors[i]->r);
+        fprintf(file, "\nGreen=%d", groupColors[i]->g);
+        fprintf(file, "\nBlue=%d", groupColors[i]->b);
     }
+
+    fclose(file);
 
     //do memory cleanup of x/y and release image
     ccv_disable_cache();
@@ -307,7 +310,7 @@ void Main::doBBF(IplImage* img, std::string imagePath, ccv_tld_param_t ccv_tld_p
     if (bbfImage != 0)
     {
         ccv_array_t* seq = ccv_bbf_detect_objects(bbfImage, &cascade, 1, ccv_bbf_default_params);
-        if (seq->rnum == 0)     std::cout << "nothing found by bbf" << std::endl;
+        if (seq->rnum == 0)     //std::cout << "nothing found by bbf" << std::endl;
         for (int i = 0; i < seq->rnum; i++)
         {
             ccv_comp_t* comp = (ccv_comp_t*)ccv_array_get(seq, i);
@@ -461,7 +464,7 @@ bool Main::createTLD(long startFrame, long endFrame, CvRect *rect, const ccv_tld
 
         groupColors.push_back(c);
         numGroups++;
-        std::cout << QString::number(numGroups).toStdString() << std::endl;
+        //std::cout << QString::number(numGroups).toStdString() << std::endl;
     } else {
         groupNumber = groupNameToId.at(groupName.toStdString());
     }
@@ -494,7 +497,7 @@ void Main::addTrackerInfo(long startFrame, long endFrame, CvRect* add, std::stri
     idToTrackerName.insert(std::pair<int, std::string>(trackerId, trackerName));
     trackerResults.push_back(trackerName);
     trackerResults[trackerId].append("\n#");
-    for (int i = 1; i < frameCount; i++){
+    for (int i = 0; i < frameCount; i++){
         trackerResults[trackerId].append("\n-");
 
     }

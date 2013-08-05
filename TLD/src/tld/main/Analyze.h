@@ -18,13 +18,18 @@ class Analyze
 public:
 
     tld::AnalyzeGui *analyzeGui;
+    QTextEdit* aWin;
 
     Analyze() {
         analyzeGui = new tld::AnalyzeGui();
+        numGroups = 0;
+        numTrackers = 0;
+        frameCount = 1;
     }
     ~Analyze();
     bool doWork(std::string resultsDirectory, IplImage *img);
-    void initGui(int videoX, int videoY, IplImage *img);
+    void initGui(int videoX, int videoY, IplImage *img, QTextEdit* aWin);
+    void debugAnalyze();
 
 
 private:
