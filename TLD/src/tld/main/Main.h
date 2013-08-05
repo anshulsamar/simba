@@ -60,16 +60,16 @@ public:
         frameCount = 1;
         x = 0;
         y = 0;
-        gui = new Gui();
+        gui = new tld::Gui();
         textMutex = new QMutex;
     }
     ~Main();
     bool doWork(Settings* settings);
-    void addTrackerInfo(int startFrame, int endFrame, CvRect* add);
+    void addTrackerInfo(long startFrame, long endFrame, CvRect* add, std::string trackerName, int trackerId);
     void initGui(int videoX, int videoY);
 
 private:
-    void createTLD(CvRect *rect, const ccv_tld_param_t ccv_tld_params, int trackerId);
+    bool createTLD(long startFrame, long endFrame, CvRect *rect, const ccv_tld_param_t ccv_tld_params, int trackerId);
     void initializeTracking(IplImage *img, const ccv_tld_param_t ccv_tld_params);
     void reinitializeTracking(IplImage *img, const ccv_tld_param_t ccv_tld_params);
     void deleteTrackersAndGroups();
@@ -83,13 +83,17 @@ private:
     std::vector<CvRect*> rectangles;
     std::vector<QSemaphore *> trackerSems;
     std::vector<QSemaphore *> mainSems;
-    std::vector<int> startFrames;
-    std::vector<int> endFrames;
-    std::map<string, int> trackerNamesToId;
-    std::map<string, int> groupNameToId;
+    std::vector<long> startFrames;
+    std::vector<long> endFrames;
+
+    std::map<std::string, int> trackerNameToId;
+    std::map<std::string, int> groupNameToId;
+    std::map<int, std::string> idToGroupName;
+    std::map<int, std::string> idToTrackerName;
     std::map<int, int> trackersToGroupMap;
-    std::vector< std::vector<int>* > groups;
-    std::vector<int> groupNumTrackers;
+    std::vector< std::vector<int> > trackersPerGroup;
+
+    std::vector<std::string> trackerResults;
 
 
     struct colors {
@@ -103,7 +107,7 @@ private:
     std::vector<int> trackerConsecutiveMissed;
 
     int numTrackers;
-    int frameCount;
+    long frameCount;
     int numGroups;
 };
 

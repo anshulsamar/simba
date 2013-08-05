@@ -17,6 +17,9 @@
 #include "ImAcq.h"
 #include "Gui.h"
 #include "ConfigDialog.h"
+#include "Analyze.h"
+#include "AnalyzeGui.h"
+
 
 extern "C" {
 #include <ccv.h>
@@ -49,7 +52,7 @@ int main(int argc, char **argv)
    double desktopHeight = desktop->height();
    double desktopWidth = desktop->width();
 
-   std::cout << QString::number(desktopHeight).toStdString() + QString(" ").toStdString() + QString::number(desktopWidth).toStdString() << std::endl;
+   //std::cout << QString::number(desktopHeight).toStdString() + QString(" ").toStdString() + QString::number(desktopWidth).toStdString() << std::endl;
 
    //Loading "Application" Image
 
@@ -91,7 +94,7 @@ int main(int argc, char **argv)
         std::string imagePath = settings->m_videoPath;
         char num[64];
         memset(num, 0, 64);
-        sprintf(num, "%05d", 1);
+        sprintf(num, "%07ld", 1L);
         imagePath += QString(num).toStdString();
         imagePath += std::string(".png");
 
@@ -105,8 +108,8 @@ int main(int argc, char **argv)
         double videoX = desktopWidth/2 - videoWidth/2;
         double videoY = desktopHeight/2 - videoHeight/2;
 
-           std::cout << QString::number(videoHeight).toStdString() + QString(" ").toStdString() + QString::number(videoWidth).toStdString() << std::endl;
-           std::cout << QString::number(videoX).toStdString() + QString(" ").toStdString() + QString::number(videoY).toStdString() << std::endl;
+          // std::cout << QString::number(videoHeight).toStdString() + QString(" ").toStdString() + QString::number(videoWidth).toStdString() << std::endl;
+          // std::cout << QString::number(videoX).toStdString() + QString(" ").toStdString() + QString::number(videoY).toStdString() << std::endl;
 
         main->initGui(videoX, videoY);
 
@@ -115,6 +118,17 @@ int main(int argc, char **argv)
         }
 
         delete main;
+
+        IplImage *img2;
+
+        Analyze *analyze = new Analyze();
+        analyze->initGui(desktopWidth, desktopHeight, img2);
+        if (!analyze->doWork(settings->m_resultsDirectory, img2))
+           return EXIT_FAILURE;
+
+
+        delete analyze;
+
         delete settings;
     }
 

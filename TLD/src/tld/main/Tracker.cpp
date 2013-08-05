@@ -48,7 +48,7 @@ using namespace cv;
  * TLD object before main even reaches that part of the video.
  */
 
-Tracker::Tracker(int frameCount, int trackerId, std::string videoPath, QSemaphore* trackerSemaphore, QSemaphore *mainSemaphore, CvRect *rect, int startFrame, int endFrame, const ccv_tld_param_t ccv_tld_params, bool saveResults, std::string resultsDirectory, ccv_dense_matrix_t** x, ccv_dense_matrix_t** y)
+Tracker::Tracker(long frameCount, int trackerId, std::string videoPath, QSemaphore* trackerSemaphore, QSemaphore *mainSemaphore, CvRect *rect, long startFrame, long endFrame, const ccv_tld_param_t ccv_tld_params, bool saveResults, std::string resultsDirectory, ccv_dense_matrix_t** x, ccv_dense_matrix_t** y)
 {
 
     this->xPtr = x;
@@ -102,20 +102,13 @@ void Tracker::track(){
         trackerSemaphore->acquire(); //main is ready for tld object to process frame
         if (done) break;
         ccv_tld_info_t info;
+       // std::cout << "about to track obj" << std::endl;
         ccv_comp_t newbox = ccv_tld_track_object(ccvtld, *xPtr, *yPtr, &info);
+        //std::cout << "object tracked" << std::endl;
         rect->x = newbox.rect.x;
         rect->y = newbox.rect.y;
         rect->width = newbox.rect.width;
         rect->height = newbox.rect.height;
-
-        if (ccvtld->found){
-            if (saveResults)
-                fprintf(file, "Tracker %02d %05d: %d %d %d %d %f\n", trackerId, frameCount, newbox.rect.x, newbox.rect.y, newbox.rect.width, newbox.rect.height, newbox.confidence);
-        }
-        else {
-            if (saveResults)
-                fprintf(file, "Tracker %02d %05d: --------------\n", trackerId, frameCount);
-        }
         mainSemaphore->release();
     }
 }

@@ -43,7 +43,7 @@ using namespace cv;
 class Tracker : public QThread
 {
 public:
-    Tracker(int frameCount, int trackerId, std::string videoPath, QSemaphore* trackerSemaphore, QSemaphore *mainSemaphore, CvRect *rect, int startFrame, int endFrame, const ccv_tld_param_t ccv_tld_params, bool saveResults, std::string resultsDirectory, ccv_dense_matrix_t** x, ccv_dense_matrix_t** y);
+    Tracker(long frameCount, int trackerId, std::string videoPath, QSemaphore* trackerSemaphore, QSemaphore *mainSemaphore, CvRect *rect, long startFrame, long endFrame, const ccv_tld_param_t ccv_tld_params, bool saveResults, std::string resultsDirectory, ccv_dense_matrix_t** x, ccv_dense_matrix_t** y);
     ~Tracker();
     void track();
     bool found();
@@ -60,9 +60,9 @@ private:
     QSemaphore *mainSemaphore;
     CvRect *rect;
 
-    int frameCount;
-    int startFrame;
-    int endFrame;
+    long frameCount;
+    long startFrame;
+    long endFrame;
     int trackerId;
 
     FILE* file;

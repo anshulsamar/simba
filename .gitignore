@@ -1,5 +1,8 @@
 *~
 *.psd
+BuildOCV
+Frameworks
+OpenCV
 CMakeLists.txt.user
 .cproject
 .project

@@ -105,8 +105,12 @@ void ConfigDialog::on_buttonBox_accepted()
     else
         m_settings->m_iniPath = "";
 
-    if(!ui->resultsDirectory->text().isEmpty())
+    if(!ui->resultsDirectory->text().isEmpty()){
         m_settings->m_resultsDirectory = ui->resultsDirectory->text().toStdString();
+        if (m_settings->m_resultsDirectory[m_settings->m_resultsDirectory.length() - 1] != '/'){
+            m_settings->m_resultsDirectory += std::string("/");
+    }
+    }
     else
         m_settings->m_resultsDirectory = "";
 
