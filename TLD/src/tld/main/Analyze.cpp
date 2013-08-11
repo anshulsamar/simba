@@ -1,3 +1,4 @@
+#include <QApplication>
 #include <QFile>
 #include <QTextStream>
 #include <QSettings>
@@ -138,15 +139,31 @@ bool Analyze::groupInfo(std::string groupName){
 
 std::string Analyze::getCommand(){
 
-    QString info = aWin->toHtml();
-    if (info.size() < 1) return "";
-    std::cout << "making string list" << std::endl;
-    QStringList commands = info.split(">");
-    if (commands.size() < 1) return "";
-    std::cout << "getting command" << std::endl;
+    QString info = aWin->toPlainText();
+    QStringList commands = info.split("$ ");
     QString command = commands[commands.size() - 1];
-    std::cout << "returning" << std::endl;
+    //if (command[command.size() - 1] == '\n')
+      //  command[command.size() - 1] = 0;
+    //command = command.toLower();
     return command.toStdString();
+
+    //put support against backspace + more robust terminal like things
+
+}
+
+void Analyze::intel(){
+
+    char num[64];
+    std::string imagePath;
+    imagePath = resultsDirectory;
+    memset(num, 0, 64);
+    sprintf(num, "%07ld", 2L);
+    imagePath += QString(num).toStdString();
+    imagePath += std::string(".png");
+    QString html = QString("<img src=\"") + QString(imagePath.c_str()) + QString("\" align=\"left\" height=\"42\" width=\"42\"/>");
+    std::cout << html.toStdString() << std::endl;
+    intelWin->insertHtml(html);
+
 
 }
 
@@ -214,17 +231,42 @@ bool Analyze::doWork() {
     }
 
 
-    bool play = true;
+    bool play = false;
+    bool addMarker = false;
     long currFrame = 0; //make 0 once you add the first frame to the folder
     std::string imagePath;
     char num[64];
 
-    aWin->append(">");
-    std::cout << "appended the >" << std::endl;
+    aWin->insertHtml(QString("<font color=\"yellow\">Simba$ </font>"));
 
     std::string command;
 
-        while (play){
+    while (true){
+
+        command = getCommand();
+
+        if (command.compare("analyze\n") == 0){
+            char flag;
+            int trackerId;
+            intel();
+            std::cout << "intel func" << std::endl;
+            addMarker = true;
+        }
+        else if (command.compare("play\n") == 0){
+            std::cout << "play" << std::endl;
+            play = true;
+            addMarker = true;
+        }
+        else if (command.compare("pause\n") == 0){
+            std::cout << "pause" << std::endl;
+            play = false;
+            addMarker = true;
+        } else if (command[command.size() - 1] == '\n'){
+            addMarker = true;
+        } else
+            addMarker = false;
+
+        if (play) {
             currFrame++;
             imagePath = resultsDirectory;
             memset(num, 0, 64);
@@ -234,11 +276,19 @@ bool Analyze::doWork() {
 
             cv::Mat img = imread(imagePath.c_str(), 1);
             cv::Mat imgResized;
-            resize(img, imgResized, Size(), fx, fy, CV_INTER_AREA);
+            resize(img, imgResized, Size(), fxSmallVideo, fySmallVideo, CV_INTER_AREA);
             //do error checking here
-            analyzeGui->showImage(imgResized, mainWindowName);
-            if (currFrame == 10)currFrame = 1;
+            analyzeGui->showImage(imgResized, oneName);
+            if (currFrame == 10) currFrame = 1;
         }
+
+        if (addMarker){
+            //aWin->clear();
+            aWin->insertHtml(QString("<font color=\"yellow\">Simba$ </font>"));
+        }
+
+        app->processEvents();
+    }
 
 
 
@@ -256,10 +306,39 @@ Analyze::~Analyze(){
 
 }
 
-void Analyze::initGui(int mainVideoX, int mainVideoY, int secondaryVideoX, int secondaryVideoY, std::string mainWindowName, std::string secondaryWindowName){
+//change these to doubles
 
-    analyzeGui->initVideoWindow(mainVideoX, mainVideoY, secondaryVideoX, secondaryVideoY, mainWindowName, secondaryWindowName);
+void Analyze::initGui(int oneX, int oneY, int twoX, int twoY, int smallVideoWidth, int smallVideoHeight, int graphX, int graphY, int graphWidth, int graphHeight, std::string oneName, std::string twoName, std::string graphName){
 
+    analyzeGui->initVideoWindow(oneX, oneY, twoX, twoY, graphX, graphY, oneName, twoName, graphName);
+    std::string imagePath = resultsDirectory;
+    char num[64];
+    memset(num, 0, 64);
+    long x = 2;
+    sprintf(num, "%07ld", x);
+    imagePath += QString(num).toStdString();
+    imagePath += std::string(".png");
+    cv::Mat img = imread(imagePath.c_str(), 1);
+    cv::Mat imgResized;
+    resize(img, imgResized, Size(), (double)smallVideoWidth/img.cols, (double)smallVideoHeight/img.rows, CV_INTER_AREA);
+    std::cout << "init gui resized img" << std::endl;
+    std::cout << QString::number(imgResized.rows).toStdString() + QString(" ").toStdString() + QString::number(imgResized.cols).toStdString() << std::endl;
+   // std::cout << QString::number(fx).toStdString() + QString(" ").toStdString() + QString::number(fy).toStdString() << std::endl;
+    fySmallVideo = (double)smallVideoHeight/img.rows;
+    fxSmallVideo  = (double)smallVideoWidth/img.cols;
+    analyzeGui->showImage(imgResized, oneName);
+    analyzeGui->showImage(imgResized, twoName);
+
+   /* cv::Mat graphImg = imread("/Users/Anshul/Desktop/Track/intel.png", 1);
+    cv::Mat graphImgResized;
+    resize(graphImg, graphImgResized, Size(), (double)graphWidth/graphImg.cols, (double)graphHeight/graphImg.rows, CV_INTER_AREA);
+    std::cout << "init gui resized graphImg" << std::endl;
+    std::cout << QString::number(graphImgResized.rows).toStdString() + QString(" ").toStdString() + QString::number(graphImgResized.cols).toStdString() << std::endl;
+
+    analyzeGui->showImage(graphImgResized, graphName);*/
+
+    this->graphWidth = graphWidth;
+    this->graphHeight = graphHeight;
 }
 
 void Analyze::debugAnalyze(){

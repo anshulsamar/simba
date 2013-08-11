@@ -26,56 +26,29 @@ enum Retval
 class Main
 {
 public:
-    IplImage *graphImage;
-    tld::Gui *gui;
-    int graphHeight;
-    int graphWidth;
-    bool selectManually;
-    bool loadIni;
-    bool saveIni;
-    bool saveResults;
-    std::string videoPath;
-    std::string iniPath;
-    std::string saveIniDirectory;
-    std::string resultsDirectory;
-    int trackersInIniFile;
-    QSettings* settingsOut;
-    QTextEdit* analytics;
-    QMutex* textMutex;
-    ccv_dense_matrix_t* x;
-    ccv_dense_matrix_t* y;
 
-    Main() {
-        selectManually = true;
-        loadIni = false;
-        saveIni = false;
-        saveResults = false;
-        videoPath = "";
-        iniPath = "";
-        resultsDirectory = "";
-        settingsOut = NULL;
-        graphImage = NULL;
+    Main(Settings* settings) {
+        saveResults = settings->m_saveResults;
+        trackImagesPath = settings->m_trackImagesPath;
+        resultsDirectory = settings->m_resultsDirectory;
         numTrackers = 0;
         numGroups = 0;
         frameCount = 1;
         x = 0;
         y = 0;
-        gui = new tld::Gui();
-        textMutex = new QMutex;
+        gui = new tld::Gui();   
     }
     ~Main();
     bool doWork(Settings* settings);
-    void addTrackerInfo(long startFrame, long endFrame, CvRect* add, std::string trackerName, int trackerId);
     void initGui(int videoX, int videoY);
 
 private:
     bool createTLD(long startFrame, long endFrame, CvRect *rect, const ccv_tld_param_t ccv_tld_params, int trackerId);
     void initializeTracking(IplImage *img, const ccv_tld_param_t ccv_tld_params);
-    void reinitializeTracking(IplImage *img, const ccv_tld_param_t ccv_tld_params);
     void deleteTrackersAndGroups();
     bool loadInitializationFile();
-    void analysis();
     void deleteTracker(int i);
+    void addTrackerInfo(long startFrame, long endFrame, CvRect* add, std::string trackerName, int trackerId);
     void doDpm(IplImage* img, std::string imagePath, ccv_tld_param_t ccv_tld_params);
     void doBBF(IplImage* img, std::string imagePath, ccv_tld_param_t ccv_tld_params);
 
@@ -95,17 +68,20 @@ private:
 
     std::vector<std::string> trackerResults;
 
-
     struct colors {
         int r;
         int g;
         int b;
     };
 
-        std::vector< struct colors* > groupColors;
+    std::vector< struct colors* > groupColors;
 
-    std::vector<int> trackerConsecutiveMissed;
-
+    tld::Gui *gui;
+    bool saveResults;
+    std::string trackImagesPath;
+    std::string resultsDirectory;
+    ccv_dense_matrix_t* x;
+    ccv_dense_matrix_t* y;
     int numTrackers;
     long frameCount;
     int numGroups;

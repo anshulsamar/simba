@@ -35,10 +35,15 @@ Settings::Settings() :
     track_deform_scale(0.02),
     new_deform_shift(0.02),
     track_deform_shift(0.02),
-    m_loadVideo(false),
-    m_loadIni(false),
+    m_trackImagesPath(""),
+    m_analyzeImagesPath(""),
+    m_resultsDirectory(""),
+    m_saveAnalysisDirectory(""),
+    m_track(false),
     m_saveResults(false),
-    m_saveIni(false)
+    m_analyze(false),
+    m_saveAnalysis(false)
+
 {}
 
 Settings::~Settings()

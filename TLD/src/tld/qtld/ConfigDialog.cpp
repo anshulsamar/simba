@@ -16,13 +16,13 @@
 
 using tld::Settings;
 
-ConfigDialog::ConfigDialog(Settings *settings, bool *correctClosed, QWidget *parent) :
+ConfigDialog::ConfigDialog(Settings *settings, int *errno, QWidget *parent) :
     QDialog(parent),
     m_settings(settings),
     m_correctClosed(correctClosed),
     ui(new Ui_TrackLearnDetect)
 {
-    *m_correctClosed = false;
+    this->errno = errno;
     ui->setupUi(this);
 
 }
@@ -31,8 +31,6 @@ ConfigDialog::~ConfigDialog()
 {
     delete ui;
 }
-
-//This function is not used
 
 void ConfigDialog::changeEvent(QEvent *e)
 {
@@ -54,19 +52,19 @@ void ConfigDialog::changeEvent(QEvent *e)
  * is populated.
  */
 
-void ConfigDialog::on_pushButton_loadVideo_clicked()
+void ConfigDialog::on_pushButton_loadTrackImages_clicked()
 {
-    QString file = QFileDialog::getExistingDirectory(this, tr("Select directory containing video images"),
+    QString file = QFileDialog::getExistingDirectory(this, tr("Select directory containing images"),
                    QDir::currentPath());
-    ui->videoPath->setText(file);
+    ui->trackImagesPath->setText(file);
 
 }
 
-void ConfigDialog::on_pushButton_loadIni_clicked()
+void ConfigDialog::on_pushButton_loadAnalysisImages_clicked()
 {
-    QString file = QFileDialog::getOpenFileName(this, tr("Select ini file"),
-                   QDir::currentPath());
-    ui->iniPath->setText(file);
+    QString file = QFileDialog::getExistingDirectory(this, tr("Select directory containing images"),
+                                                     QDir::currentPath());
+    ui->analysisImagesPath->setText(file);
 }
 
 void ConfigDialog::on_pushButton_saveResults_clicked()
@@ -76,48 +74,55 @@ void ConfigDialog::on_pushButton_saveResults_clicked()
     ui->resultsDirectory->setText(file);
 }
 
-void ConfigDialog::on_pushButton_saveIni_clicked()
+void ConfigDialog::on_pushButton_saveAnalysis_clicked()
 {
     QString file = QFileDialog::getExistingDirectory(this, tr("Output directory for Ini file"),
                    QDir::currentPath());
-    ui->iniDirectory->setText(file);
+    ui->saveAnalysisDirectory->setText(file);
 }
 
 void ConfigDialog::on_buttonBox_accepted()
 {
-    m_settings->m_method = IMACQ_VID;
-    m_settings->m_loadVideo = ui->loadVideo->isChecked();
-    m_settings->m_loadIni = ui->loadIni->isChecked();
+    m_settings->m_track = ui->loadTrackImages->isChecked();
+    m_settings->m_analyze = ui->loadAnalysisImages->isChecked();
     m_settings->m_saveResults = ui->saveResults->isChecked();
-    m_settings->m_saveIni = ui->saveIni->isChecked();
+    m_settings->m_saveAnalysis = ui->saveAnalysis->isChecked();
 
-    if(!ui->videoPath->text().isEmpty()){
-        m_settings->m_videoPath = ui->videoPath->text().toStdString();
-        if (m_settings->m_videoPath[m_settings->m_videoPath.length() - 1] != '/'){
-            m_settings->m_videoPath += std::string("/");
+    if (m_settings->m_track == false && m_settings->m_analyze == false){
+        *errno = 2;
+        close();
+        return;
     }
-    }
-    else
-        m_settings->m_videoPath = "";
 
-    if(!ui->iniPath->text().isEmpty())
-        m_settings->m_iniPath = (ui->iniPath->text()).toStdString();
-    else
-        m_settings->m_iniPath = "";
+    if (m_settings->m_track == true && ui->trackImagesPath->text().isEmpty() || m_settings->m_analyze == true && ui->analysisImagesPath->text().isEmpty() || m_settings->m_saveResults == true && ui->resultsDirectory->text().isEmpty() ||  m_settings->m_saveAnalysis ==true && ui->saveAnalysisDirectory->text().isEmpty()){
+        *errno = 3;
+        close();
+        return;
+    }
+
+    if(!ui->trackImagesPath->text().isEmpty()){
+        m_settings->m_trackImagesPath = ui->trackImagesPath->text().toStdString();
+        if (m_settings->m_trackImagesPath[m_settings->m_trackImagesPath.length() - 1] != '/')
+            m_settings->m_trackImagesPath += std::string("/");
+    }
+
+    if(!ui->analysisImagesPath->text().isEmpty()){
+        m_settings->m_analysisImagesPath = ui->analysisImagesPath->text().toStdString();
+        if (m_settings->m_analysisImagesPath[m_settings->m_analysisImagesPath.length() - 1] != '/')
+            m_settings->m_analysisImagesPath += std::string("/");
+    }
 
     if(!ui->resultsDirectory->text().isEmpty()){
         m_settings->m_resultsDirectory = ui->resultsDirectory->text().toStdString();
-        if (m_settings->m_resultsDirectory[m_settings->m_resultsDirectory.length() - 1] != '/'){
+        if (m_settings->m_resultsDirectory[m_settings->m_resultsDirectory.length() - 1] != '/')
             m_settings->m_resultsDirectory += std::string("/");
     }
-    }
-    else
-        m_settings->m_resultsDirectory = "";
 
-    if(!ui->iniDirectory->text().isEmpty())
-        m_settings->m_iniDirectory = ui->iniDirectory->text().toStdString();
-    else
-        m_settings->m_iniDirectory = "";
+    if(!ui->saveAnalysisDirectory->text().isEmpty()){
+        m_settings->m_saveAnalysisDirectory = ui->saveAnalysisDirectory->text().toStdString();
+        if (m_settings->m_saveAnalysisDirectory[m_settings->m_saveAnalysisDirectory.length() - 1] != '/')
+            m_settings->m_saveAnalysisDirectory += std::string("/");
+    }
 
     m_settings->win_size_width = ui->win_size_width->text().toInt();
     m_settings->win_size_height = ui->win_size_height->text().toInt();
@@ -148,13 +153,12 @@ void ConfigDialog::on_buttonBox_accepted()
     m_settings->track_deform_scale = ui->track_deform_scale->text().toFloat();
     m_settings->new_deform_shift = ui->new_deform_shift->text().toFloat();
     m_settings->track_deform_shift = ui->track_deform_shift->text().toFloat();
-    *m_correctClosed = true;
-
+    *errno = 1;
     close();
 }
 
 void ConfigDialog::on_buttonBox_rejected()
 {
-    *m_correctClosed = false;
+    *errno = 0;
     close();
 }

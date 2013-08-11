@@ -28,16 +28,18 @@ void AnalyzeGui::showImage(cv::Mat image, std::string windowName)
 {
 
     imshow(windowName, image );
-    //cvShowImage(windowName.c_str(), image);
 }
 
-void AnalyzeGui::initVideoWindow(int mainVideoX, int mainVideoY, int secondaryVideoX, int secondaryVideoY, std::string mainWindowName, std::string secondaryWindowName)
+void AnalyzeGui::initVideoWindow(int oneX, int oneY, int twoX, int twoY, int graphX, int graphY, std::string oneName, std::string twoName, std::string graphName)
 {
-    namedWindow(mainWindowName.c_str(), CV_WINDOW_AUTOSIZE);
-    moveWindow(mainWindowName.c_str(), mainVideoX, mainVideoY);
+    namedWindow(oneName.c_str(), CV_WINDOW_AUTOSIZE);
+    moveWindow(oneName.c_str(), oneX, oneY);
 
-    namedWindow(secondaryWindowName.c_str(), CV_WINDOW_AUTOSIZE);
-    moveWindow(secondaryWindowName.c_str(), secondaryVideoX, secondaryVideoY);
+    namedWindow(twoName.c_str(), CV_WINDOW_AUTOSIZE);
+    moveWindow(twoName.c_str(), twoX, twoY);
+
+    //namedWindow(graphName.c_str(), CV_WINDOW_AUTOSIZE);
+    //moveWindow(graphName.c_str(), graphX, graphY);
 }
 
 }

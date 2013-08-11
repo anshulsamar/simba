@@ -6,7 +6,6 @@
 #include <QSettings>
 #include <vector>
 #include <QTextEdit>
-#include <QMutex>
 #include "AnalyzeGui.h"
 
 extern "C" {
@@ -17,30 +16,27 @@ class Analyze
 {
 public:
 
-    tld::AnalyzeGui *analyzeGui;
-
-    Analyze(double fx, double fy, QTextEdit* aWin, std::string resultsDirectory, std::string mainWindowName, std::string secondaryWindowName) {
+    Analyze(QTextEdit* aWin, QTextEdit* intelWin, std::string analysisImagesPath, std::string oneName, std::string twoName, QApplication* app) {
         analyzeGui = new tld::AnalyzeGui();
         numGroups = 0;
         numTrackers = 0;
         frameCount = 1;
         this->aWin = aWin;
-        this->resultsDirectory = resultsDirectory;
-        this->mainWindowName = mainWindowName;
-        this->secondaryWindowName = secondaryWindowName;
-        this->fx = fx;
-        this->fy = fy;
+        this->intelWin = intelWin;
+        this->analysisImagesPath = analysisImagesPath;
+        this->oneName = oneName;
+        this->twoName = twoName;
+        this->app = app;
     }
     ~Analyze();
     bool doWork();
-    void initGui(int mainVideoX, int mainVideoY, int secondaryVideoX, int secondaryVideoY, std::string mainWindowName, std::string secondaryWindowName);
+    void initGui(int oneX, int oneY, int twoX, int twoY, int smallVideoWidth, int smallVideoHeight, std::string oneName, std::string twoName);
 
 
 private:
 
+    void intel();
     void debugAnalyze();
-
-
     bool groupInfo(std::string groupName);
     long startFrame(int trackerId);
     void getImage(long frame, std::string newImageName, int x, int y, int width, int height);
@@ -48,6 +44,9 @@ private:
     std::string getCommand();
 
     QTextEdit* aWin;
+    QTextEdit* intelWin;
+    tld::AnalyzeGui *analyzeGui;
+    QApplication* app;
 
     std::map<std::string, int> trackerNameToId;
     std::map<std::string, int> groupNameToId;
@@ -69,13 +68,10 @@ private:
     int numTrackers;
     long frameCount;
     int numGroups;
+    std::string analysisImagesPath;
+    std::string oneName;
+    std::string twoName;
 
-    std::string resultsDirectory;
-    std::string mainWindowName;
-    std::string secondaryWindowName;
-
-    double fx;
-    double fy;
 };
 
 #endif /* Analyze_H_ */

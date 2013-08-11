@@ -1,10 +1,6 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
-#include <vector>
-
-#include "ImAcq.h"
-
 extern "C" {
 #include <ccv.h>
 }
@@ -22,7 +18,7 @@ public:
     Settings();
     ~Settings();
 
-    //Settings comments from libccv documentation
+    //Settings comments from libccv documentation for tld
 
     /* short-term lucas-kanade tracking parameters */
     int win_size_width; //these are the parts of the ccv_size_t struct that we need user to input
@@ -64,16 +60,15 @@ public:
      * only gets examined at frame % rotation == 1 */
     int rotation;
 
-    std::string  m_videoPath;
-    std::string  m_iniPath;
+    std::string m_trackImagesPath;
+    std::string m_analysisImagesPath;
     std::string  m_resultsDirectory;
-    std::string  m_iniDirectory;
-    int m_method;
+    std::string  m_saveAnalysisDirectory;
 
-    bool m_loadVideo;
-    bool m_loadIni;
+    bool m_track;
     bool m_saveResults;
-    bool m_saveIni;
+    bool m_analyze;
+    bool m_saveAnalysis;
 
 };
 

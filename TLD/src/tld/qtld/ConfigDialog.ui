@@ -14,7 +14,8 @@
    <string>Track Learn Detect</string>
   </property>
   <property name="styleSheet">
-   <string notr="true"/>
+   <string notr="true">color: white;
+background-color: black;</string>
   </property>
   <property name="sizeGripEnabled">
    <bool>false</bool>
@@ -35,7 +36,7 @@
       <attribute name="title">
        <string>General</string>
       </attribute>
-      <layout class="QHBoxLayout" name="horizontalLayout_3">
+      <layout class="QVBoxLayout" name="verticalLayout_5">
        <item>
         <widget class="QScrollArea" name="scrollArea_general">
          <property name="widgetResizable">
@@ -52,33 +53,33 @@
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_4">
            <item>
-            <widget class="QGroupBox" name="loadVideo">
+            <widget class="QGroupBox" name="loadTrackImages">
              <property name="title">
-              <string>Load Image Folder</string>
+              <string>Track</string>
              </property>
              <property name="checkable">
               <bool>true</bool>
              </property>
              <property name="checked">
-              <bool>true</bool>
+              <bool>false</bool>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_2">
               <item>
-               <widget class="QLabel" name="label_modelPath_2">
+               <widget class="QLabel" name="label_trackImagesPath">
                 <property name="text">
                  <string>Images</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QLineEdit" name="videoPath">
+               <widget class="QLineEdit" name="trackImagesPath">
                 <property name="text">
-                 <string>/Users/Anshul/Desktop/Track/Build/Videos/Images/</string>
+                 <string/>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QPushButton" name="pushButton_loadVideo">
+               <widget class="QPushButton" name="pushButton_loadTrackImages">
                 <property name="text">
                  <string>Browse...</string>
                 </property>
@@ -100,7 +101,7 @@
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_4">
               <item>
-               <widget class="QLabel" name="label_outputDir_2">
+               <widget class="QLabel" name="label_saveResultsDirectory">
                 <property name="text">
                  <string>Directory</string>
                 </property>
@@ -109,7 +110,7 @@
               <item>
                <widget class="QLineEdit" name="resultsDirectory">
                 <property name="text">
-                 <string>./</string>
+                 <string/>
                 </property>
                </widget>
               </item>
@@ -124,9 +125,9 @@
             </widget>
            </item>
            <item>
-            <widget class="QGroupBox" name="loadIni">
+            <widget class="QGroupBox" name="loadAnalyzeImages">
              <property name="title">
-              <string>Load Initialization</string>
+              <string>Analyze</string>
              </property>
              <property name="checkable">
               <bool>true</bool>
@@ -136,17 +137,17 @@
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout">
               <item>
-               <widget class="QLabel" name="label_modelPath">
+               <widget class="QLabel" name="label_analyzeImagesPath">
                 <property name="text">
-                 <string>File</string>
+                 <string>Images</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QLineEdit" name="iniPath"/>
+               <widget class="QLineEdit" name="analyzeImagesPath"/>
               </item>
               <item>
-               <widget class="QPushButton" name="pushButton_loadIni">
+               <widget class="QPushButton" name="pushButton_loadAnalyzeImages">
                 <property name="text">
                  <string>Browse...</string>
                 </property>
@@ -156,9 +157,9 @@
             </widget>
            </item>
            <item>
-            <widget class="QGroupBox" name="saveIni">
+            <widget class="QGroupBox" name="saveAnalysis">
              <property name="title">
-              <string>Save Initialization</string>
+              <string>Save Analysis</string>
              </property>
              <property name="checkable">
               <bool>true</bool>
@@ -168,21 +169,21 @@
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_6">
               <item>
-               <widget class="QLabel" name="label_outputDir">
+               <widget class="QLabel" name="label_saveAnalysisDirectory">
                 <property name="text">
                  <string>Directory</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QLineEdit" name="iniDirectory">
+               <widget class="QLineEdit" name="saveAnalysisDirectory">
                 <property name="text">
-                 <string>./</string>
+                 <string/>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QPushButton" name="pushButton_saveIni">
+               <widget class="QPushButton" name="pushButton_saveAnalysis">
                 <property name="text">
                  <string>Browse...</string>
                 </property>
@@ -642,9 +643,9 @@
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <tabstops>
-  <tabstop>pushButton_loadIni</tabstop>
+  <tabstop>pushButton_loadAnalyzeImages</tabstop>
   <tabstop>buttonBox</tabstop>
-  <tabstop>iniPath</tabstop>
+  <tabstop>analyzeImagesPath</tabstop>
  </tabstops>
  <resources/>
  <connections/>
