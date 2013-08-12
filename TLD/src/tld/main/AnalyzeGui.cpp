@@ -2,12 +2,8 @@
 #include "Main.h"
 #include <string>
 #include <sstream>
-#include "global.h"
 
 using std::string;
-
-namespace tld
-{
 
 AnalyzeGui::AnalyzeGui()
 {
@@ -30,7 +26,7 @@ void AnalyzeGui::showImage(cv::Mat image, std::string windowName)
     imshow(windowName, image );
 }
 
-void AnalyzeGui::initVideoWindow(int oneX, int oneY, int twoX, int twoY, int graphX, int graphY, std::string oneName, std::string twoName, std::string graphName)
+void AnalyzeGui::initGui(int oneX, int oneY, int twoX, int twoY, int intelX, int intelY, std::string oneName, std::string twoName, std::string intelName)
 {
     namedWindow(oneName.c_str(), CV_WINDOW_AUTOSIZE);
     moveWindow(oneName.c_str(), oneX, oneY);
@@ -38,8 +34,7 @@ void AnalyzeGui::initVideoWindow(int oneX, int oneY, int twoX, int twoY, int gra
     namedWindow(twoName.c_str(), CV_WINDOW_AUTOSIZE);
     moveWindow(twoName.c_str(), twoX, twoY);
 
-    //namedWindow(graphName.c_str(), CV_WINDOW_AUTOSIZE);
-    //moveWindow(graphName.c_str(), graphX, graphY);
-}
+    namedWindow(intelName.c_str(), CV_WINDOW_AUTOSIZE);
+    moveWindow(intelName.c_str(), intelX, intelY);
 
 }

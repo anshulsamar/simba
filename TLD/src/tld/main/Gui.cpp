@@ -6,9 +6,6 @@
 
 using std::string;
 
-namespace tld
-{
-
 Gui::Gui() :  m_window_name("Track Learn Detect")
 {
     cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, 1, 1, 0, 2, 8);
@@ -197,4 +194,3 @@ void Gui::setWidthHeight(int width, int height){
     i.height = height;
 }
 
-}

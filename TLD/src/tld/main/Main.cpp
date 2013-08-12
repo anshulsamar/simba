@@ -5,7 +5,6 @@
 #include <QLineEdit>
 #include <fstream>
 #include "Main.h"
-#include "Config.h"
 #include "Gui.h"
 //#include "global.h"
 #include "Settings.h"
@@ -34,7 +33,6 @@ extern "C" {
 
 #define BBF 1
 
-using namespace tld;
 using namespace cv;
 
 /* Function: doWork()
@@ -83,7 +81,7 @@ bool Main::doWork(Settings* settings) {
 
     bool ok;
 
-    std::string imagePath = videoPath;
+    std::string imagePath = trackImagesPath;
     char num[64];
     memset(num, 0, 64);
     sprintf(num, "%07ld", frameCount);
@@ -97,15 +95,12 @@ bool Main::doWork(Settings* settings) {
     Mat grey(img->height, img->width, CV_8UC1);
     cvtColor(cv::Mat(img), grey, CV_BGR2GRAY);
 
-    std::string saveImage;
-
-    /*std::string saveImage = resultsDirectory;
+    std::string saveImagePath = resultsDirectory;
     memset(num, 0, 64);
     sprintf(num, "%07ld", frameCount);
-    saveImage += QString(num).toStdString();
-    saveImage += std::string(".png");*/
-
-    //cvSaveImage(saveImage.c_str(), img);
+    saveImagePath += QString(num).toStdString();
+    saveImagePath += std::string(".png");
+    cvSaveImage(saveImagePath.c_str(), img);
 
     CvFont font;
     cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, 0.35, 0.35, 0, 1, 8);
@@ -136,7 +131,7 @@ bool Main::doWork(Settings* settings) {
 
         frameCount++;
 
-        imagePath = videoPath;
+        imagePath = trackImagesPath;
         memset(num, 0, 64);
         sprintf(num, "%07ld", frameCount);
         imagePath += QString(num).toStdString();
@@ -180,15 +175,17 @@ bool Main::doWork(Settings* settings) {
         x = y;
         y = 0;
 
-        gui->showImage(img);
 
-        saveImage = resultsDirectory;
+
+        saveImagePath = resultsDirectory;
         memset(num, 0, 64);
         sprintf(num, "%07ld", frameCount);
-        saveImage += QString(num).toStdString();
-        saveImage += std::string(".png");
+        saveImagePath += QString(num).toStdString();
+        saveImagePath += std::string(".png");
 
-        cvSaveImage(saveImage.c_str(), img);
+        cvSaveImage(saveImagePath.c_str(), img);
+
+        gui->showImage(img);
 
         gui->setMouseHandler();
         videoKey = gui->getKey();
@@ -212,7 +209,6 @@ bool Main::doWork(Settings* settings) {
             if (newKey == 'p') break;
         }
         if (videoKey == 'i'){
-            analysis();
             //gui->setMouseHandler();
             videoKey = gui->getKey();
             while (videoKey != 'a' && videoKey != 'p' && videoKey != 'q') {
@@ -280,8 +276,8 @@ bool Main::doWork(Settings* settings) {
     std::string settingsFileName = resultsDirectory + "groupSettings.ini";
     FILE* file = fopen(settingsFileName.c_str(), "w");
     //so technically what if it was incorrectly stopped in between/is this frame count right?
-    fprintf(file, "$s\nFrameCount=%ld", "[Info]", frameCount);
-    fprintf(file, "%s\nNames=", "[GroupNames]");
+    fprintf(file, "%s\nFrameCount=%ld", "[Info]", frameCount);
+    fprintf(file, "\n%s\nNames=", "[GroupNames]");
     for (int i = 0; i < numGroups; i++){
        fprintf(file, "%s ", idToGroupName[i].c_str());
     }
@@ -399,12 +395,6 @@ void Main::doDpm(IplImage* img, std::string imagePath, ccv_tld_param_t ccv_tld_p
 
 }
 
-void Main::analysis(){
-
-
-}
-
-
 /* Function: createTLD()
  * ---------------------
  * Given that all required TLD information has been appended on necessary data structures (i.e. startFrames,
@@ -432,7 +422,7 @@ bool Main::createTLD(long startFrame, long endFrame, CvRect *rect, const ccv_tld
 
     trackerSems.push_back(new QSemaphore());
     mainSems.push_back(new QSemaphore());
-    Tracker* t = new Tracker(frameCount, trackerId, videoPath, trackerSems[trackerId], mainSems[trackerId], rectangles[trackerId], startFrames[trackerId], endFrames[trackerId], ccv_tld_params, saveResults, resultsDirectory, &x, &y);
+    Tracker* t = new Tracker(frameCount, trackerId, trackImagesPath, trackerSems[trackerId], mainSems[trackerId], rectangles[trackerId], startFrames[trackerId], endFrames[trackerId], ccv_tld_params, saveResults, resultsDirectory, &x, &y);
     trackers.push_back(t);
 
     if (groupNameToId.find(groupName.toStdString()) == groupNameToId.end()){
@@ -574,8 +564,6 @@ Main::~Main(){
 
     deleteTrackersAndGroups();
     delete gui;
-    if (settingsOut != NULL && saveIni)
-        delete settingsOut;
 
 }
 

@@ -32,7 +32,6 @@ extern "C" {
 }
 #endif
 
-using namespace tld;
 using namespace cv;
 
 #include <QThread>

@@ -13,16 +13,12 @@
 #include "ui_ConfigDialog.h"
 #include "Settings.h"
 
-
-using tld::Settings;
-
-ConfigDialog::ConfigDialog(Settings *settings, int *errno, QWidget *parent) :
+ConfigDialog::ConfigDialog(Settings *settings, int *err, QWidget *parent) :
     QDialog(parent),
     m_settings(settings),
-    m_correctClosed(correctClosed),
     ui(new Ui_TrackLearnDetect)
 {
-    this->errno = errno;
+    this->err = err;
     ui->setupUi(this);
 
 }
@@ -88,14 +84,14 @@ void ConfigDialog::on_buttonBox_accepted()
     m_settings->m_saveResults = ui->saveResults->isChecked();
     m_settings->m_saveAnalysis = ui->saveAnalysis->isChecked();
 
-    if (m_settings->m_track == false && m_settings->m_analyze == false){
-        *errno = 2;
+    if ((!m_settings->m_track && !m_settings->m_analyze) || (m_settings->m_track && !m_settings->m_saveResults) || (m_settings->m_analyze && !m_settings->m_saveAnalysis) ){
+        *err = 2;
         close();
         return;
     }
 
-    if (m_settings->m_track == true && ui->trackImagesPath->text().isEmpty() || m_settings->m_analyze == true && ui->analysisImagesPath->text().isEmpty() || m_settings->m_saveResults == true && ui->resultsDirectory->text().isEmpty() ||  m_settings->m_saveAnalysis ==true && ui->saveAnalysisDirectory->text().isEmpty()){
-        *errno = 3;
+    if ((m_settings->m_track == true && ui->trackImagesPath->text().isEmpty()) || (m_settings->m_analyze == true && ui->analysisImagesPath->text().isEmpty()) || (m_settings->m_saveResults == true && ui->resultsDirectory->text().isEmpty()) || (m_settings->m_saveAnalysis ==true && ui->saveAnalysisDirectory->text().isEmpty())){
+        *err = 3;
         close();
         return;
     }
@@ -153,12 +149,12 @@ void ConfigDialog::on_buttonBox_accepted()
     m_settings->track_deform_scale = ui->track_deform_scale->text().toFloat();
     m_settings->new_deform_shift = ui->new_deform_shift->text().toFloat();
     m_settings->track_deform_shift = ui->track_deform_shift->text().toFloat();
-    *errno = 1;
+    *err = 1;
     close();
 }
 
 void ConfigDialog::on_buttonBox_rejected()
 {
-    *errno = 0;
+    *err = 0;
     close();
 }

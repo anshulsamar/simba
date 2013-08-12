@@ -1,16 +1,14 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
+#include <string>
+
+using std::string;
+
 extern "C" {
 #include <ccv.h>
 }
 
-namespace tld
-{
-
-/**
- * In this class all settings are stored.
- */
 class Settings
 {
 public:
@@ -62,8 +60,8 @@ public:
 
     std::string m_trackImagesPath;
     std::string m_analysisImagesPath;
-    std::string  m_resultsDirectory;
-    std::string  m_saveAnalysisDirectory;
+    std::string m_resultsDirectory;
+    std::string m_saveAnalysisDirectory;
 
     bool m_track;
     bool m_saveResults;
@@ -72,6 +70,5 @@ public:
 
 };
 
-}
 
 #endif /* SETTINGS_H */

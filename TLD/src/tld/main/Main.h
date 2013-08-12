@@ -15,8 +15,6 @@ extern "C" {
 #include <ccv.h>
 }
 
-using tld::Settings;
-
 enum Retval
 {
     PROGRAM_EXIT = 0,
@@ -36,7 +34,7 @@ public:
         frameCount = 1;
         x = 0;
         y = 0;
-        gui = new tld::Gui();   
+        gui = new Gui();
     }
     ~Main();
     bool doWork(Settings* settings);
@@ -76,7 +74,7 @@ private:
 
     std::vector< struct colors* > groupColors;
 
-    tld::Gui *gui;
+    Gui *gui;
     bool saveResults;
     std::string trackImagesPath;
     std::string resultsDirectory;

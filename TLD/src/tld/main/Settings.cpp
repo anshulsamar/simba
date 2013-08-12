@@ -1,10 +1,5 @@
 #include "Settings.h"
 
-using namespace std;
-
-namespace tld
-{
-
 Settings::Settings() :
     win_size_width(15),
     win_size_height(15),
@@ -36,7 +31,7 @@ Settings::Settings() :
     new_deform_shift(0.02),
     track_deform_shift(0.02),
     m_trackImagesPath(""),
-    m_analyzeImagesPath(""),
+    m_analysisImagesPath(""),
     m_resultsDirectory(""),
     m_saveAnalysisDirectory(""),
     m_track(false),
@@ -49,4 +44,3 @@ Settings::Settings() :
 Settings::~Settings()
 {}
 
-}

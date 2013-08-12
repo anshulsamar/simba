@@ -14,7 +14,7 @@
 #include <opencv/cv.h>
 #include <opencv2/core/core.hpp>
 #include "Main.h"
-#include "Config.h"
+#include "Settings.h"
 #include "ImAcq.h"
 #include "Gui.h"
 #include "ConfigDialog.h"
@@ -39,10 +39,6 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 #endif
-
-using tld::Config;
-using tld::Gui;
-using tld::Settings;
 
 int main(int argc, char **argv)
 {
@@ -69,53 +65,93 @@ int main(int argc, char **argv)
 
     while (true){
 
-        //Initializing and creating main
-
         Settings *settings = new Settings();
 
-        int errno;
+        int err;
 
-        ConfigDialog w(settings, &errno);
+        ConfigDialog w(settings, &err);
         w.show();
         app->exec();
 
-        while (errno != 1){
-            if (errno == 0) return EXIT_SUCCESS; //user hits cancel
-            if (errno == 2){
+        while (err != 1){
+            if (err == 0) return EXIT_SUCCESS;
+            if (err == 2){
                 QMessageBox msgBox;
-                msgBox.setText("Neither \"track\" nor \"analyze\" have been clicked.");
+                msgBox.setStyleSheet(QString("font: 14pt \"Source Sans Pro\""));
+                msgBox.setText("Either you haven't clicked one of \"track\" or \"analyze\" or didn't provide directories in which to save their results.");
                 msgBox.exec();
             }
-            if (errno == 3){
+            if (err == 3){
                 QMessageBox msgBox;
+                msgBox.setStyleSheet(QString("font: 14pt \"Source Sans Pro\""));
                 msgBox.setText("A directory path is missing.");
                 msgBox.exec();
             }
-            ConfigDialog w(settings, &errno);
+            ConfigDialog w(settings, &err);
             w.show();
             app->exec();
         }
 
-        std::string imagePath = settings->m_trackImagesPath;
         char num[64];
-        memset(num, 0, 64);
-        sprintf(num, "%07ld", 1L);
-        imagePath += QString(num).toStdString();
-        imagePath += std::string(".png");
+        std::string imagePath;
+        cv::Mat img;
 
-        cv::Mat img = imread(imagePath.c_str(), 1);
-        if (!img.data){
-            QMessageBox msgBox;
-            msgBox.setText("Unable to read the first image in given directory.");
-            msgBox.exec();
-            delete settings;
-            continue;
+        if (settings->m_track){
+
+            imagePath = settings->m_trackImagesPath;
+
+            memset(num, 0, 64);
+            sprintf(num, "%07ld", 1L);
+            imagePath += QString(num).toStdString();
+            imagePath += std::string(".png");
+
+            img = imread(imagePath.c_str(), 1);
+            if (!img.data){
+                QMessageBox msgBox;
+                msgBox.setStyleSheet(QString("font: 14pt \"Source Sans Pro\""));
+                msgBox.setText("Unable to read the first image in given directory.");
+                msgBox.exec();
+                delete settings;
+                continue;
+            }
+
+        }
+
+        if (settings->m_analyze){
+
+            imagePath = settings->m_analysisImagesPath;
+            memset(num, 0, 64);
+            sprintf(num, "%07ld", 1L);
+            imagePath += QString(num).toStdString();
+            imagePath += std::string(".png");
+
+            img = imread(imagePath.c_str(), 1);
+            if (!img.data){
+                QMessageBox msgBox;
+                msgBox.setStyleSheet(QString("font: 14pt \"Source Sans Pro\""));
+                msgBox.setText("Unable to read the first image in given directory.");
+                msgBox.exec();
+                delete settings;
+                continue;
+            }
+
         }
 
         //Window spacing and formatting
 
         int videoWidth = img.cols;
         int videoHeight = img.rows;
+
+        if (videoWidth > desktopWidth || videoHeight > desktopHeight){
+            QMessageBox msgBox;
+            msgBox.setStyleSheet(QString("font: 14pt \"Source Sans Pro\""));
+            QString t = QString("Images too big for the size of your screen (") + QString::number(desktopWidth) + QString(" x ") + QString::number(desktopHeight) + QString("). See our tutorial on using ffmpeg for image size changing.");
+            msgBox.setText(t);
+            msgBox.exec();
+            delete settings;
+            continue;
+
+        }
 
         double videoX = desktopWidth/2 - (double)videoWidth/2;
         double videoY = desktopHeight/2 - (double)videoHeight/2;
@@ -124,10 +160,11 @@ int main(int argc, char **argv)
             Main *main = new Main(settings);
             main->initGui(videoX, videoY);
 
-            errno = main->doWork(settings);
+            err = main->doWork(settings);
 
-            if (errno == 0){
+            if (err == 0){
               QMessageBox msgBox;
+              msgBox.setStyleSheet(QString("font: 14pt \"Source Sans Pro\""));
               msgBox.setText("Oops - there was an error. Ok to restart.");
               msgBox.exec();
               delete main;
@@ -142,7 +179,7 @@ int main(int argc, char **argv)
 
             int spacing = 50;
 
-            double controlWidth = desktopWidth/5;
+            double controlWidth = desktopWidth/4;
             double controlHeight = desktopHeight * (4.0/5);
             double smallVideoHeight = videoHeight;
             double smallVideoWidth = videoWidth;
@@ -171,11 +208,11 @@ int main(int argc, char **argv)
 
             double controlX = windowWidth - controlWidth + windowX;
             double controlY = windowY;
-            double graphX = windowX;
-            double graphY = windowY;
+            double intelX = windowX;
+            double intelY = windowY;
 
-            double oneX = graphX;
-            double oneY = graphY + intelHeight + spacing;
+            double oneX = intelX;
+            double oneY = intelY + intelHeight + spacing;
             double twoX = oneX + smallVideoWidth + spacing;
             double twoY = oneY;
 
@@ -188,26 +225,19 @@ int main(int argc, char **argv)
             aWin->show();
             aWin->append(QString("Track Learn Detect\n"));
 
-            QTextEdit* intelWin = new QTextEdit;
-            intelWin->resize(intelWidth, intelHeight);
-            intelWin->setWindowTitle("Intel");
-            intelWin->move(graphX, graphY);
-            QString c("QWidget {background-color: black}\nQWidget {color: rgb(255, 255, 255)}\nQWidget {font: 14pt \"Source Sans Pro\"}");
-            intelWin->setStyleSheet(c);
-            intelWin->show();
-            intelWin->append(QString("Track Learn Detect\n"));
-
             std::string oneName = "One";
             std::string twoName = "Two";
+            std::string intelName = "Intel";
 
-            Analyze *analyze = new Analyze(aWin, intelWin, settings->m_analysisImagesPath, oneName, twoName, qApp);
-            analyze->initGui(oneX, oneY, twoX, twoY, smallVideoWidth, smallVideoHeight, intelWidth, intelHeight, oneName, twoName);
+            Analyze *analyze = new Analyze(aWin, settings->m_analysisImagesPath, oneName, twoName, intelName, smallVideoWidth, smallVideoHeight, intelWidth, intelHeight, qApp);
+            analyze->initGui(oneX, oneY, twoX, twoY, intelX, intelY);
 
-            errno = analyze->doWork();
+            err = analyze->doWork();
 
-            if (errno == 0){
+            if (err == 1){
                 QMessageBox msgBox;
-                msgBox.setText("Oops - there was an error. Ok to restart.");
+                msgBox.setStyleSheet(QString("font: 14pt \"Source Sans Pro\""));
+                msgBox.setText("Missing files - make sure ini, txt, and png files aren't misplaced.");
                 msgBox.exec();
             }
 

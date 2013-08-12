@@ -16,36 +16,67 @@ class Analyze
 {
 public:
 
-    Analyze(QTextEdit* aWin, QTextEdit* intelWin, std::string analysisImagesPath, std::string oneName, std::string twoName, QApplication* app) {
-        analyzeGui = new tld::AnalyzeGui();
+    Analyze(QTextEdit* aWin, std::string analysisImagesPath, std::string oneName, std::string twoName,  std::string intelName, int smallVideoWidth, int smallVideoHeight, int intelWidth, int intelHeight, QApplication* app) {
+        analyzeGui = new AnalyzeGui();
         numGroups = 0;
         numTrackers = 0;
         frameCount = 1;
         this->aWin = aWin;
-        this->intelWin = intelWin;
         this->analysisImagesPath = analysisImagesPath;
         this->oneName = oneName;
         this->twoName = twoName;
+        this->intelName = intelName;
         this->app = app;
-    }
-    ~Analyze();
-    bool doWork();
-    void initGui(int oneX, int oneY, int twoX, int twoY, int smallVideoWidth, int smallVideoHeight, std::string oneName, std::string twoName);
+        this->intelWidth = intelWidth;
+        this->intelHeight = intelHeight;
+        this->smallVideoHeight = smallVideoHeight;
+        this->smallVideoWidth = smallVideoWidth;
 
+        std::string imagePath = this->analysisImagesPath;
+        char num[64];
+        memset(num, 0, 64);
+        long x = 2;
+        sprintf(num, "%07ld", x);
+        imagePath += QString(num).toStdString();
+        imagePath += std::string(".png");
+        cv::Mat img = cv::imread(imagePath.c_str(), 1);
+
+        fySmallVideo = (double)smallVideoHeight/img.rows;
+        fxSmallVideo  = (double)smallVideoWidth/img.cols;
+
+        /*graphImg = cv::imread("./TLD.app/Contents/Resources/graph.png", 1);
+        graphImgCrop = graphImg;
+        graphImgCrop = graphImg(cv::Rect(0, 0, intelWidth, intelHeight));
+        twoImg = graphImg;
+        twoImgCrop = twoImg(cv::Rect(0, 0, smallVideoWidth, smallVideoHeight));*/
+
+    }
+    ~Analyze(){
+        delete analyzeGui;
+    }
+
+    int doWork();
+    void initGui(int oneX, int oneY, int twoX, int twoY, int intelX, int intelY);
 
 private:
-
-    void intel();
-    void debugAnalyze();
-    bool groupInfo(std::string groupName);
     long startFrame(int trackerId);
     void getImage(long frame, std::string newImageName, int x, int y, int width, int height);
-    bool trackerInfo(std::string trackerName);
-    std::string getCommand();
+    std::string getImagePath(long frame);
+    void saveImage(long frame, std::string saveImagePath, bool crop, int x, int y, int width, int height);
+    long getStartFrame(int trackerId);
+    bool isGroup(std::string group);
+    bool isTracker(std::string tracker);
+    void getStats();
+    void fillTotalAppearances(bool group, std::vector <std::string>& list, std::vector<bool> &totalAppearances);
+    void play(QStringList& command);
+    void show(QStringList& command);
+    bool parse();
+    void debugAnalyze();
+    QStringList getCommand();
 
     QTextEdit* aWin;
     QTextEdit* intelWin;
-    tld::AnalyzeGui *analyzeGui;
+    AnalyzeGui *analyzeGui;
     QApplication* app;
 
     std::map<std::string, int> trackerNameToId;
@@ -55,7 +86,13 @@ private:
     std::map<int, int> trackersToGroupMap;
     std::vector< std::vector<int> > trackersPerGroup;
     std::vector< std::vector<std::string> > trackerResults;
-    std::vector<long> startFrames;
+    std::vector< std::vector<bool> > trackerAppearances;
+    std::vector< std::vector<bool> > groupAppearances;
+    std::vector< long > trackerCounts;
+    std::vector< long > groupCounts;
+    std::vector< long > endFrames;
+    std::vector< long > startFrames;
+    std::vector< std::vector<long> > startStopFrames;
 
     struct colors {
         int r;
@@ -71,6 +108,18 @@ private:
     std::string analysisImagesPath;
     std::string oneName;
     std::string twoName;
+    std::string intelName;
+    int intelWidth;
+    int intelHeight;
+    int smallVideoHeight;
+    int smallVideoWidth;
+    double fxSmallVideo;
+    double fySmallVideo;
+
+    cv::Mat graphImg;
+    cv::Mat graphImgCrop;
+    cv::Mat twoImg;
+    cv::Mat twoImgCrop;
 
 };
 

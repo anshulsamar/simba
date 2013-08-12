@@ -6,9 +6,6 @@
 
 #include <opencv/highgui.h>
 
-namespace tld
-{
-
 class Gui
 {
 public:
@@ -42,6 +39,5 @@ private:
  */
 int getBBFromUser(IplImage *img, CvRect &rect, Gui *gui, int num, std::string message);
 
-}
 
 #endif /* GUI_H_ */

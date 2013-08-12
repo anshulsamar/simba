@@ -14,8 +14,7 @@
    <string>Track Learn Detect</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">color: white;
-background-color: black;</string>
+   <string notr="true">font: 14pt &quot;Source Sans Pro&quot;;</string>
   </property>
   <property name="sizeGripEnabled">
    <bool>false</bool>
@@ -54,6 +53,9 @@ background-color: black;</string>
           <layout class="QVBoxLayout" name="verticalLayout_4">
            <item>
             <widget class="QGroupBox" name="loadTrackImages">
+             <property name="styleSheet">
+              <string notr="true"/>
+             </property>
              <property name="title">
               <string>Track</string>
              </property>
@@ -125,7 +127,7 @@ background-color: black;</string>
             </widget>
            </item>
            <item>
-            <widget class="QGroupBox" name="loadAnalyzeImages">
+            <widget class="QGroupBox" name="loadAnalysisImages">
              <property name="title">
               <string>Analyze</string>
              </property>
@@ -137,17 +139,21 @@ background-color: black;</string>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout">
               <item>
-               <widget class="QLabel" name="label_analyzeImagesPath">
+               <widget class="QLabel" name="label_analysisImagesPath">
                 <property name="text">
                  <string>Images</string>
                 </property>
                </widget>
               </item>
               <item>
-               <widget class="QLineEdit" name="analyzeImagesPath"/>
+               <widget class="QLineEdit" name="analysisImagesPath">
+                <property name="text">
+                 <string>/Users/Anshul/Desktop/Track/Build/Results/</string>
+                </property>
+               </widget>
               </item>
               <item>
-               <widget class="QPushButton" name="pushButton_loadAnalyzeImages">
+               <widget class="QPushButton" name="pushButton_loadAnalysisImages">
                 <property name="text">
                  <string>Browse...</string>
                 </property>
@@ -178,7 +184,7 @@ background-color: black;</string>
               <item>
                <widget class="QLineEdit" name="saveAnalysisDirectory">
                 <property name="text">
-                 <string/>
+                 <string>/Users/Anshul/Desktop/Track/Build/Results/</string>
                 </property>
                </widget>
               </item>
@@ -199,6 +205,9 @@ background-color: black;</string>
       </layout>
      </widget>
      <widget class="QWidget" name="tab_detector">
+      <property name="styleSheet">
+       <string notr="true"/>
+      </property>
       <attribute name="title">
        <string>Detector</string>
       </attribute>
@@ -213,8 +222,8 @@ background-color: black;</string>
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>606</width>
-            <height>1638</height>
+            <width>201</width>
+            <height>1696</height>
            </rect>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -634,6 +643,9 @@ background-color: black;</string>
    </item>
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="styleSheet">
+      <string notr="true"/>
+     </property>
      <property name="standardButtons">
       <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
      </property>
@@ -643,9 +655,9 @@ background-color: black;</string>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <tabstops>
-  <tabstop>pushButton_loadAnalyzeImages</tabstop>
+  <tabstop>pushButton_loadAnalysisImages</tabstop>
   <tabstop>buttonBox</tabstop>
-  <tabstop>analyzeImagesPath</tabstop>
+  <tabstop>analysisImagesPath</tabstop>
  </tabstops>
  <resources/>
  <connections/>
