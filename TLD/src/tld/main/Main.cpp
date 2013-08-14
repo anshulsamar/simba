@@ -449,9 +449,9 @@ bool Main::createTLD(long startFrame, long endFrame, CvRect *rect, const ccv_tld
             c->g = 114;
             c->b = 216;
         }  else {
-            c->r = 0;
-            c->g = 0;
-            c->b = 0;
+            c->r = 225 - (groupNumber%10)*15;
+            c->g = 224 - (groupNumber%10)*15;
+            c->b = 115 - (groupNumber%10)*10;
         }
 
         groupColors.push_back(c);

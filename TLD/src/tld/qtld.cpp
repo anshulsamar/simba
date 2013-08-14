@@ -60,7 +60,7 @@ int main(int argc, char **argv)
    QMutex a;
    a.lock();
    QWaitCondition waitCondition;
-   waitCondition.wait(&a, 1000);
+   waitCondition.wait(&a, 3000);
    view.close();
 
     while (true){
@@ -109,7 +109,7 @@ int main(int argc, char **argv)
             if (!img.data){
                 QMessageBox msgBox;
                 msgBox.setStyleSheet(QString("font: 14pt \"Source Sans Pro\""));
-                msgBox.setText("Unable to read the first image in given directory.");
+                msgBox.setText("Track: Unable to read the first image in given directory.");
                 msgBox.exec();
                 delete settings;
                 continue;
@@ -129,7 +129,7 @@ int main(int argc, char **argv)
             if (!img.data){
                 QMessageBox msgBox;
                 msgBox.setStyleSheet(QString("font: 14pt \"Source Sans Pro\""));
-                msgBox.setText("Unable to read the first image in given directory.");
+                msgBox.setText("Analysis: unable to read the first image in given directory.");
                 msgBox.exec();
                 delete settings;
                 continue;
@@ -228,17 +228,21 @@ int main(int argc, char **argv)
             std::string oneName = "One";
             std::string twoName = "Two";
             std::string intelName = "Intel";
+            bool ok = true;
+            Analyze *analyze = new Analyze(aWin, settings->m_analysisImagesPath, oneName, twoName, intelName, smallVideoWidth, smallVideoHeight, intelWidth, intelHeight, qApp, ok);
 
-            Analyze *analyze = new Analyze(aWin, settings->m_analysisImagesPath, oneName, twoName, intelName, smallVideoWidth, smallVideoHeight, intelWidth, intelHeight, qApp);
-            analyze->initGui(oneX, oneY, twoX, twoY, intelX, intelY);
+            if (ok){
 
-            err = analyze->doWork();
+                analyze->initGui(oneX, oneY, twoX, twoY, intelX, intelY);
 
-            if (err == 1){
-                QMessageBox msgBox;
-                msgBox.setStyleSheet(QString("font: 14pt \"Source Sans Pro\""));
-                msgBox.setText("Missing files - make sure ini, txt, and png files aren't misplaced.");
-                msgBox.exec();
+                err = analyze->doWork();
+
+                if (err == 1){
+                    QMessageBox msgBox;
+                    msgBox.setStyleSheet(QString("font: 14pt \"Source Sans Pro\""));
+                    msgBox.setText("Missing files - make sure ini, txt, and png files aren't misplaced.");
+                    msgBox.exec();
+                }
             }
 
             aWin->close();

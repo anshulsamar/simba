@@ -5,8 +5,10 @@
 #include <QSemaphore>
 #include <QSettings>
 #include <vector>
+#include <QMessageBox>
 #include <QTextEdit>
 #include "AnalyzeGui.h"
+#include <opencv/cv.h>
 
 extern "C" {
 #include <ccv.h>
@@ -16,7 +18,7 @@ class Analyze
 {
 public:
 
-    Analyze(QTextEdit* aWin, std::string analysisImagesPath, std::string oneName, std::string twoName,  std::string intelName, int smallVideoWidth, int smallVideoHeight, int intelWidth, int intelHeight, QApplication* app) {
+    Analyze(QTextEdit* aWin, std::string analysisImagesPath, std::string oneName, std::string twoName,  std::string intelName, int smallVideoWidth, int smallVideoHeight, int intelWidth, int intelHeight, QApplication* app, bool& ok) {
         analyzeGui = new AnalyzeGui();
         numGroups = 0;
         numTrackers = 0;
@@ -44,11 +46,18 @@ public:
         fySmallVideo = (double)smallVideoHeight/img.rows;
         fxSmallVideo  = (double)smallVideoWidth/img.cols;
 
-        /*graphImg = cv::imread("./TLD.app/Contents/Resources/graph.png", 1);
-        graphImgCrop = graphImg;
-        graphImgCrop = graphImg(cv::Rect(0, 0, intelWidth, intelHeight));
-        twoImg = graphImg;
-        twoImgCrop = twoImg(cv::Rect(0, 0, smallVideoWidth, smallVideoHeight));*/
+        graphImg = cv::imread("/Users/Anshul/Desktop/Track/Build/TLD.app/Contents/Resources/graph.png", 1);
+        if (!graphImg.data) {
+            QMessageBox msgBox;
+            msgBox.setStyleSheet(QString("font: 14pt \"Source Sans Pro\""));
+            msgBox.setText("Unable to open ./TLD.app/Contents/Resources/graph.png");
+            msgBox.exec();
+            ok = false;
+        }
+        graphImg.copyTo(graphImgCrop);
+
+        cv::resize(graphImgCrop, graphImgCrop, cv::Size(), (double)intelWidth/graphImg.cols, (double)intelHeight/graphImg.rows);
+
 
     }
     ~Analyze(){
@@ -60,6 +69,9 @@ public:
 
 private:
     long startFrame(int trackerId);
+    void showVideoImage(long frame, std::string winName);
+    bool check(std::vector<std::string>& list);
+    void userError(std::string e);
     void getImage(long frame, std::string newImageName, int x, int y, int width, int height);
     std::string getImagePath(long frame);
     void saveImage(long frame, std::string saveImagePath, bool crop, int x, int y, int width, int height);
@@ -67,12 +79,14 @@ private:
     bool isGroup(std::string group);
     bool isTracker(std::string tracker);
     void getStats();
-    void fillTotalAppearances(bool group, std::vector <std::string>& list, std::vector<bool> &totalAppearances);
+    void fillTotalAppearancesAND(std::vector <std::string>& list, std::vector<bool> &totalAppearances);
+    void fillTotalAppearancesOR(std::vector <std::string>& list, std::vector<bool> &totalAppearances);
+    void man(std::string command);
     void play(QStringList& command);
     void show(QStringList& command);
     bool parse();
     void debugAnalyze();
-    QStringList getCommand();
+    void getCommand(QStringList& commandParts, bool& success);
 
     QTextEdit* aWin;
     QTextEdit* intelWin;
