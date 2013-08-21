@@ -1,5 +1,3 @@
-#include <cstdio>
-#include <iostream>
 #include <QWidget>
 #include <QDesktopWidget>
 #include <QApplication>
@@ -13,6 +11,8 @@
 #include <opencv/highgui.h>
 #include <opencv/cv.h>
 #include <opencv2/core/core.hpp>
+#include <cstdio>
+#include <iostream>
 #include "Main.h"
 #include "Settings.h"
 #include "ImAcq.h"
@@ -20,6 +20,8 @@
 #include "ConfigDialog.h"
 #include "Analyze.h"
 #include "AnalyzeGui.h"
+
+//Note to student developer: Any 'C' files (i.e. libccv) must be included with the extern keyword to avoid C++ compiling/prototype mangling issues.
 
 extern "C" {
 #include <ccv.h>
@@ -44,18 +46,20 @@ int main(int argc, char **argv)
 {
 
    QApplication* app = new QApplication(argc, argv);
+
+   //The height and width of the desktop is used for "relative" positioning of other windows
    QDesktopWidget *desktop = QApplication::desktop();
    double desktopHeight = desktop->height();
    double desktopWidth = desktop->width();
 
-   //Loading "Application" Image
-
+   //Loading "Application" Image. This should really be stored elsewhere in the mac bundle (see mac application deployment documentation online), but I have it here for now.
    QGraphicsScene scene;
    QGraphicsView view(&scene);
    QGraphicsPixmapItem item(QPixmap("./TLD.app/Contents/Resources/loadingImage.jpg"));
    scene.addItem(&item);
    view.setWindowFlags(Qt::FramelessWindowHint);
 
+   //Waits 3 seconds before going to the configuration window
    view.show();
    QMutex a;
    a.lock();
@@ -71,7 +75,11 @@ int main(int argc, char **argv)
 
         ConfigDialog w(settings, &err);
         w.show();
+
+        //Starts the event loop so the user can enter values in the config box
         app->exec();
+
+        //Error checking of config options
 
         while (err != 1){
             if (err == 0) return EXIT_SUCCESS;
@@ -96,10 +104,13 @@ int main(int argc, char **argv)
         std::string imagePath;
         cv::Mat img;
 
+        //Error checking of images
+
         if (settings->m_track){
 
             imagePath = settings->m_trackImagesPath;
 
+            //Image name: 0000001.png, 0000002.png, etc.
             memset(num, 0, 64);
             sprintf(num, "%07ld", 1L);
             imagePath += QString(num).toStdString();
@@ -109,7 +120,7 @@ int main(int argc, char **argv)
             if (!img.data){
                 QMessageBox msgBox;
                 msgBox.setStyleSheet(QString("font: 14pt \"Source Sans Pro\""));
-                msgBox.setText("Track: Unable to read the first image in given directory.");
+                msgBox.setText("Track: Unable to read the first image in given directory. Make sure images are of the form %07d.png - i.e. 0000001.png, 0000002.png, etc. If you need to convert your video into images, use the shell script on the Simba github page.");
                 msgBox.exec();
                 delete settings;
                 continue;
@@ -157,7 +168,44 @@ int main(int argc, char **argv)
         double videoY = desktopHeight/2 - (double)videoHeight/2;
 
         if (settings->m_track){
-            Main *main = new Main(settings);
+
+            //Loads parameters from settings into ccv_tld_param_t struct (this will be fed into a tld tracker)
+
+            const ccv_tld_param_t ccv_tld_params = {
+               .win_size = {
+                   settings->win_size_width,
+                   settings->win_size_height,
+               },
+               .level = settings->level,
+               .min_forward_backward_error = settings->min_forward_backward_error,
+               .min_eigen = settings->min_eigen,
+               .min_win = settings->min_win,
+               .interval = settings->interval,
+               .shift = settings->shift,
+               .top_n = settings->top_n,
+               .rotation = settings->rotation,
+               .include_overlap = settings->include_overlap,
+               .exclude_overlap = settings->exclude_overlap,
+               .structs = settings->structs,
+               .features = settings->features,
+               .validate_set = settings->validate_set,
+               .nnc_same = settings->nnc_same,
+               .nnc_thres = settings->nnc_thres,
+               .nnc_verify = settings->nnc_verify,
+               .nnc_beyond = settings->nnc_beyond,
+               .nnc_collect = settings->nnc_collect,
+               .bad_patches = settings->bad_patches,
+               .new_deform = settings->new_deform,
+               .track_deform = settings->track_deform,
+               .new_deform_angle = settings->new_deform_angle,
+               .track_deform_angle = settings->track_deform_angle,
+               .new_deform_scale = settings->new_deform_scale,
+               .track_deform_scale = settings->track_deform_scale,
+               .new_deform_shift = settings->new_deform_shift,
+               .track_deform_shift = settings->track_deform_shift,
+           };
+
+            Main *main = new Main(settings, ccv_tld_params);
             main->initGui(videoX, videoY);
 
             err = main->doWork(settings);
@@ -176,6 +224,8 @@ int main(int argc, char **argv)
         }
 
         if (settings->m_analyze){
+
+            //Window positioning
 
             int spacing = 50;
 

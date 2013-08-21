@@ -1,9 +1,3 @@
-/* ConfigDialog.cpp.
- * ----------------
- * Modified by Anshul Samar.
- *
- */
-
 #include <QWidget>
 #include <QDesktopWidget>
 #include <QMainWindow>
@@ -12,6 +6,8 @@
 #include "ConfigDialog.h"
 #include "ui_ConfigDialog.h"
 #include "Settings.h"
+
+//Config Dialog - err returns an error code if failure occurs.
 
 ConfigDialog::ConfigDialog(Settings *settings, int *err, QWidget *parent) :
     QDialog(parent),

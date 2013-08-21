@@ -25,7 +25,7 @@ class Main
 {
 public:
 
-    Main(Settings* settings) {
+    Main(Settings* settings, const ccv_tld_param_t ccv_tld_paramsUser) : ccv_tld_params(ccv_tld_paramsUser) {
         saveResults = settings->m_saveResults;
         trackImagesPath = settings->m_trackImagesPath;
         resultsDirectory = settings->m_resultsDirectory;
@@ -84,6 +84,8 @@ private:
     int numTrackers;
     long frameCount;
     int numGroups;
+
+    const ccv_tld_param_t ccv_tld_params;
 };
 
 #endif /* MAIN_H_ */
