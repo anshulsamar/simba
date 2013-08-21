@@ -47,6 +47,7 @@ public:
     void track();
     bool found();
     void trackingComplete();
+    void reinitialize(ccv_tld_param_t ccv_tld_params);
 
 protected:
     void run();

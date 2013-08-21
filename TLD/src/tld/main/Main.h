@@ -41,6 +41,7 @@ public:
     void initGui(int videoX, int videoY);
 
 private:
+    void workflowWork(char key, IplImage* img, ccv_tld_param_t ccv_tld_params);
     bool createTLD(long startFrame, long endFrame, CvRect *rect, const ccv_tld_param_t ccv_tld_params, int trackerId);
     void initializeTracking(IplImage *img, const ccv_tld_param_t ccv_tld_params);
     void deleteTrackersAndGroups();

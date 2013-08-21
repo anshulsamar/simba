@@ -63,7 +63,7 @@
               <bool>true</bool>
              </property>
              <property name="checked">
-              <bool>false</bool>
+              <bool>true</bool>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_2">
               <item>
@@ -76,7 +76,7 @@
               <item>
                <widget class="QLineEdit" name="trackImagesPath">
                 <property name="text">
-                 <string/>
+                 <string>/Users/Anshul/Desktop/Track/Build/ImagesMom/tmp</string>
                 </property>
                </widget>
               </item>
@@ -99,7 +99,7 @@
               <bool>true</bool>
              </property>
              <property name="checked">
-              <bool>false</bool>
+              <bool>true</bool>
              </property>
              <layout class="QHBoxLayout" name="horizontalLayout_4">
               <item>
@@ -112,7 +112,7 @@
               <item>
                <widget class="QLineEdit" name="resultsDirectory">
                 <property name="text">
-                 <string/>
+                 <string>/Users/Anshul/Desktop/Track/Build/Results</string>
                 </property>
                </widget>
               </item>
@@ -222,7 +222,7 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>201</width>
+            <width>606</width>
             <height>1696</height>
            </rect>
           </property>

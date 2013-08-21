@@ -11,6 +11,7 @@
 #include <opencv/cv.h>
 #include <sys/time.h>
 #include <ctype.h>
+#include <sstream>
 
 extern "C" {
 #include <ccv.h>
@@ -34,6 +35,57 @@ extern "C" {
 #define BBF 1
 
 using namespace cv;
+
+void Main::workflowWork(char key, IplImage* img, ccv_tld_param_t ccv_tld_params){
+
+    if (key == 'a'){
+        initializeTracking(img, ccv_tld_params);
+    }
+    if (key == 'r'){
+
+        char num = key;
+        while (!isdigit(num)){
+            num = gui->getKey();
+        }
+
+        std::stringstream s;
+        s << num;
+        string numString;
+        s >> numString;
+        int trackerNum = QString(numString.c_str()).toInt();
+
+        CvScalar black = CV_RGB(0, 0, 0);
+        IplImage *img0 = (IplImage *) cvClone(img);
+
+        CvFont font;
+        cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, 0.5, 0.5, 0, 1, 8);
+        gui->showImage(img0);
+
+        std::string message = string("Tracker number: ") + num + string(". Frame number: ") + QString::number(frameCount).toStdString() + string(". Draw a bounding box to reinitialize and press enter");
+        std::cout << "geting box" << std::endl;
+        if(getBBFromUser(img, *rectangles[trackerNum], gui, num, message) == PROGRAM_EXIT) return;
+        std::cout << "reinitializing" << std::endl;
+
+        std::cout << QString::number(numTrackers).toStdString() << std::endl;
+
+
+
+
+        if (trackerNum < numTrackers && trackerNum >= 0 && trackers[trackerNum] != NULL)
+            trackers[trackerNum]->reinitialize(ccv_tld_params);
+
+        gui->showImage(img);
+        cvReleaseImage(&img0);
+
+    }
+    if (key == 'd'){
+
+    }
+
+
+
+}
+
 
 /* Function: doWork()
  * -----------------
@@ -144,6 +196,8 @@ bool Main::doWork(Settings* settings) {
 
         ccv_read(imagePath.c_str(), &y, CCV_IO_GRAY | CCV_IO_ANY_FILE);
 
+        std::cout << "releasing semaphores" << std::endl;
+
         for (int i = 0; i < numTrackers; i++){
           if (trackers[i] != NULL)
                 trackerSems[i]->release();
@@ -154,28 +208,37 @@ bool Main::doWork(Settings* settings) {
                 mainSems[i]->acquire();
         }
 
+        bool lost = false;
+
+        std::cout << "getting tracks" << std::endl;
+
         for (int i = 0; i < numTrackers; i++){
 
-            if (trackers[i] != NULL && trackers[i]->found()) {
+            if (trackers[i] != NULL){
+                if (trackers[i]->found()) {
+                    std::cout << "found" << std::endl;
                 struct colors* c = groupColors[trackersToGroupMap[i]];
                 CvScalar rectangleColor = CV_RGB(c->r, c->g, c->b);
                 CvPoint topLeft = cvPoint(rectangles[i]->x, rectangles[i]->y);
                 CvPoint bottomRight = cvPoint(rectangles[i]->x + rectangles[i]->width, rectangles[i]->y + rectangles[i]->height);
                 cvRectangle(img, topLeft, bottomRight, rectangleColor, 1, 4, 0);
-                std::string name = idToGroupName.at(trackersToGroupMap[i]) + ": " + idToTrackerName.at(i);
+                std::string name = idToGroupName.at(trackersToGroupMap[i]) + ": " + idToTrackerName.at(i) + " (" + QString::number(i).toStdString() + ")";
                 cvPutText(img, name.c_str(), cvPoint(topLeft.x, topLeft.y - 2), &font, rectangleColor);
                 QString s = "\n" + QString::number(rectangles[i]->x) + " " + QString::number(rectangles[i]->height) + " " + QString::number(rectangles[i]->width) + " " + QString::number(rectangles[i]->height);
                 trackerResults[i].append(s.toStdString());
 
+               } else{
+                 lost = true;
+                 std::cout << "lost is true" << std::endl;
+                }
             }
 
         }
 
+
         ccv_matrix_free(x);
         x = y;
         y = 0;
-
-
 
         saveImagePath = resultsDirectory;
         memset(num, 0, 64);
@@ -189,6 +252,25 @@ bool Main::doWork(Settings* settings) {
 
         gui->setMouseHandler();
         videoKey = gui->getKey();
+
+        /*while (videoKey != 'p' && videoKey != 'a' && videoKey != 'r'){
+
+            videoKey = gui->getKey();
+        }*/
+
+        if (lost){
+
+            char key = videoKey;
+            while (key != 'p'){
+                workflowWork(key, img, ccv_tld_params);
+                key = gui->getKey();
+            }
+
+        }
+
+        std::cout << "finished" << std::endl;
+
+
 
         while (videoKey == 'p') {
             char newKey = gui->getKey();
@@ -209,17 +291,17 @@ bool Main::doWork(Settings* settings) {
             if (newKey == 'p') break;
         }
         if (videoKey == 'i'){
-            //gui->setMouseHandler();
+            gui->setMouseHandler();
             videoKey = gui->getKey();
             while (videoKey != 'a' && videoKey != 'p' && videoKey != 'q') {
-                //gui->setMouseHandler();
+                gui->setMouseHandler();
                 videoKey = gui->getKey();
             }
         }
         while(videoKey == 'a')
         {
             initializeTracking(img, ccv_tld_params);
-            //gui->setMouseHandler();
+            gui->setMouseHandler();
             videoKey = gui->getKey();
             while (videoKey != 'a' && videoKey != 'q' && videoKey != 'p')
                  videoKey = gui->getKey();
@@ -236,12 +318,12 @@ bool Main::doWork(Settings* settings) {
                  videoKey = gui->getKey();
             //add some ability to also hit a from here
         }
-        if (videoKey == 'r'){
+        /*if (videoKey == 'r'){
             doDpm(img, imagePath, ccv_tld_params);
         }
         if (videoKey == 'b'){
             doBBF(img, imagePath, ccv_tld_params);
-        }
+        }*/
         if(videoKey == 'q') {
             break;
         }
