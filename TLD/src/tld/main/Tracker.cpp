@@ -40,15 +40,10 @@ using namespace cv;
 
 /* Function: Tracker()
  * --------------------
- * Constructs a tracker object as well as initializing av related structs and creating
- * output file. For more details, see libccv's tld.c implementation. Note to developer:
- * main calls the constructor with frameCount, startFrame, and endFrame. frameCount is the
- * frame number the main process is currently on. startFrame is the frame on which the TLD
- * object should be initialized. We thus move the video to the start frame and initialize
- * TLD object before main even reaches that part of the video.
+ * Constructs a tracker object based on frame and given coordinates.
  */
 
-Tracker::Tracker(long frameCount, int trackerId, std::string videoPath, QSemaphore* trackerSemaphore, QSemaphore *mainSemaphore, CvRect *rect, long startFrame, long endFrame, const ccv_tld_param_t ccv_tld_params, bool saveResults, std::string resultsDirectory, ccv_dense_matrix_t** x, ccv_dense_matrix_t** y)
+Tracker::Tracker(long frameCount, int trackerId, std::string videoPath, QSemaphore* trackerSemaphore, QSemaphore *mainSemaphore, CvRect *rect, long startFrame, long endFrame, const ccv_tld_param_t ccv_tld_params, ccv_dense_matrix_t** x, ccv_dense_matrix_t** y)
 {
 
     this->xPtr = x;
@@ -62,20 +57,21 @@ Tracker::Tracker(long frameCount, int trackerId, std::string videoPath, QSemapho
     this->mainSemaphore = mainSemaphore;
     this->startFrame = startFrame;
     this->endFrame = endFrame;
-    this->saveResults = saveResults;
-    this->resultsDirectory = resultsDirectory;
-    file = NULL;
 
    ccv_rect_t ccvBox = ccv_rect(rect->x, rect->y, rect->width, rect->height);
    ccvtld = ccv_tld_new(*xPtr, ccvBox, ccv_tld_params);
 
 }
 
+/* Function: reinitialize(ccv_tld_param_t ccv_tld_params)
+ * --------------------
+ * Reinitializes a tracker ("rect" should have been updated by the main.cpp thread)
+ */
+
 void Tracker::reinitialize(ccv_tld_param_t ccv_tld_params){
 
     ccv_tld_free(ccvtld);
     ccv_rect_t ccvBox = ccv_rect(rect->x, rect->y, rect->width, rect->height);
-    std::cout << "here" << std::endl;
     ccvtld = ccv_tld_new(*xPtr, ccvBox, ccv_tld_params);
     std::cout << "now here" << std::endl;
 

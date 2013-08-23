@@ -58,11 +58,19 @@ public:
      * only gets examined at frame % rotation == 1 */
     int rotation;
 
+    //images to be tracked
     std::string m_trackImagesPath;
+
+    //tracked images to be played in analysis
     std::string m_analysisImagesPath;
+
+    //where tracked images and csv files will be saved
     std::string m_resultsDirectory;
+
+    //where statistics/analysis will be saved
     std::string m_saveAnalysisDirectory;
 
+    //true or false based on what user wishes to do
     bool m_track;
     bool m_saveResults;
     bool m_analyze;

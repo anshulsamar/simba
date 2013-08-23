@@ -16,9 +16,14 @@ Gui::~Gui()
     cvDestroyAllWindows();
 }
 
+/* Function: showImage(IplImage *image)
+ * ---------------
+ * Shows the image with buttons on top of it for mouse clicks (i.e. a button for play, quit, etc)
+ */
+
 void Gui::showImage(IplImage *image)
 {
-    cvRectangle(image, cvPoint(i.width - sizeBox - spacing, i.height - sizeBox - spacing), cvPoint(i.width - spacing, i.height - spacing), CV_RGB(255, 137, 0), CV_FILLED, 8, 0);
+    /*cvRectangle(image, cvPoint(i.width - sizeBox - spacing, i.height - sizeBox - spacing), cvPoint(i.width - spacing, i.height - spacing), CV_RGB(255, 137, 0), CV_FILLED, 8, 0);
     cvRectangle(image, cvPoint(i.width - sizeBox*2 - spacing*2, i.height - sizeBox - spacing), cvPoint(i.width - sizeBox - spacing*2, i.height - spacing), CV_RGB(255, 166, 64), CV_FILLED, 8, 0);
     cvRectangle(image, cvPoint(i.width - sizeBox*3 - spacing*3, i.height - sizeBox - spacing), cvPoint(i.width - sizeBox*2 - spacing*3, i.height - spacing), CV_RGB(255, 190, 115), CV_FILLED, 8, 0);
     cvRectangle(image, cvPoint(i.width - sizeBox*4 - spacing*4, i.height - sizeBox - spacing), cvPoint(i.width - sizeBox*3 - spacing*4, i.height - spacing), CV_RGB(255, 174, 0), CV_FILLED, 8, 0);
@@ -28,7 +33,7 @@ void Gui::showImage(IplImage *image)
     cvPutText(image, ">", cvPoint(i.width - sizeBox*2 - spacing*2 + sizeBox*.1, i.height - sizeBox - spacing + sizeBox/1.25), &font, cvScalar(0, 0, 0));
     cvPutText(image, "+", cvPoint(i.width - sizeBox*3 - spacing*3 + sizeBox*.1, i.height - sizeBox - spacing + sizeBox/1.25), &font, cvScalar(0, 0, 0));
     cvPutText(image, "i", cvPoint(i.width - sizeBox*4 - spacing*4 + sizeBox*.32, i.height - sizeBox - spacing + sizeBox/1.2), &font, cvScalar(0, 0, 0));
-
+    */
     cvShowImage(m_window_name.c_str(), image);
 }
 
@@ -49,6 +54,12 @@ static IplImage *img1;
 static CvPoint point;
 static CvRect *bb;
 static int drag = 0;
+
+/* Function: mouseHandler(int event, int x, int y, int flags, void *param)
+ * ---------------------------------------------------------------------
+ * Sets up mouse handler for the getBBFromUser function so user can specify
+ * which coordinates to track.
+ */
 
 static void mouseHandler(int event, int x, int y, int flags, void *param)
 {
@@ -79,8 +90,11 @@ static void mouseHandler(int event, int x, int y, int flags, void *param)
     }
 }
 
-// TODO: member of Gui
-// --> problem: callback function mouseHandler as member!
+/* Function: getBBFromUser(IplImage *img, CvRect &rect, Gui *gui, int num, std::string message)
+ * ---------------
+ * Populates rect with coordinates given by the user. Displays "message"
+ */
+
 int getBBFromUser(IplImage *img, CvRect &rect, Gui *gui, int num, std::string message)
 {
     window_name = gui->windowName();
@@ -103,10 +117,10 @@ int getBBFromUser(IplImage *img, CvRect &rect, Gui *gui, int num, std::string me
 
         if(tolower(key) == 'q')
         {
-            return PROGRAM_EXIT;
+            return 0;
         }
 
-        //Modification by Anshul: removed multi-character constant check
+        //Modification: removed multi-character constant check
         //(key == '\r\n'). Was getting multi-character character constant
         //warning and decided it was not needed.
 
@@ -133,8 +147,14 @@ int getBBFromUser(IplImage *img, CvRect &rect, Gui *gui, int num, std::string me
     cvReleaseImage(&img0);
     cvReleaseImage(&img1);
 
-    return SUCCESS;
+    return 1;
 }
+
+/* Function: mousehandlerVideo(int event, int x, int y, int flags, void *param)
+ * ----------------------------------------------------------------------------
+ * Mouse handler for the video. Updates the "key" inside the info struct with the box the user clicked on.
+ * I.e. if the user clicks on the quit box, key is updated to "q", etc.
+ */
 
 static void mouseHandlerVideo(int event, int x, int y, int flags, void *param)
 {

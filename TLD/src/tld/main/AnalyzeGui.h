@@ -9,7 +9,7 @@ class AnalyzeGui
 public:
     AnalyzeGui();
     ~AnalyzeGui();
-    void initGui(int oneX, int oneY, int twoX, int twoY, int intelX, int intelY, std::string oneName, std::string twoName, std::string intelName);
+    void initGui(int videoX, int videoY, std::string oneName);
     void showImage(cv::Mat image, std::string windowName);
     char getKey();
 

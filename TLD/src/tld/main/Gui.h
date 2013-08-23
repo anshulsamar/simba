@@ -3,7 +3,6 @@
 
 #include <string>
 #include <QMutex>
-
 #include <opencv/highgui.h>
 
 class Gui
@@ -12,11 +11,22 @@ public:
     Gui();
     ~Gui();
     void initVideoWindow(int videoX, int videoY);
+
+    //shows image on window
     void showImage(IplImage *image);
+
+    //get keyboard key
     char getKey();
+
+    //get mouse click
     char getVideoKey();
+
+    //sets internal struct of window width and height
     void setWidthHeight(int width, int height);
+
+    //sets up the mouse handler
     void setMouseHandler();
+
     std::string windowName();
 
 private:
@@ -30,13 +40,8 @@ private:
     info i;
 };
 
-/**
- * Get a bounding box from the user.
- * @param img image to display
- * @param rect CvRect containing the coordinates of the bounding box
- * @param gui initialized gui
- * @return PROGRAM_EXIT if 'q' or 'Q' pressed, SUCCESS if everything went right
- */
+//Gets bounding box from the user
+
 int getBBFromUser(IplImage *img, CvRect &rect, Gui *gui, int num, std::string message);
 
 

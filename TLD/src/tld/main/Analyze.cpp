@@ -36,404 +36,54 @@ extern "C" {
 
 using namespace cv;
 
-//change these to doubles
-
-void Analyze::initGui(int oneX, int oneY, int twoX, int twoY, int intelX, int intelY){
-
-    analyzeGui->initGui(oneX, oneY, twoX, twoY, intelX, intelY, oneName, twoName, intelName);
-
-}
-
-std::string Analyze::getImagePath(long frame){
-
-    std::string imagePath = analysisImagesPath;
-    char num[64];
-    memset(num, 0, 64);
-    sprintf(num, "%07ld", frame);
-    imagePath += QString(num).toStdString();
-    imagePath += std::string(".png");
-    return imagePath;
-
-}
-
-void Analyze::showVideoImage(long frame, std::string winName){
-
-    std::string imagePath = getImagePath(frame);
-    cv::Mat img = imread(imagePath.c_str(), 1);
-    cv::Mat imgCopy;
-    img.copyTo(imgCopy);
-    cv::resize(img, imgCopy, cv::Size(), fxSmallVideo, fySmallVideo);
-    analyzeGui->showImage(imgCopy, winName);
-
-}
-
-void Analyze::saveImage(long frame, std::string saveImagePath, bool crop, int x, int y, int width, int height){
-
-    std::string imagePath = analysisImagesPath;
-    char num[64];
-    memset(num, 0, 64);
-    sprintf(num, "%07ld", frame);
-    imagePath += QString(num).toStdString();
-    imagePath += std::string(".png");
-
-    cv::Mat imgMat = imread(imagePath, 1);
-    cv::Mat imgROI = imgMat;
-    if (crop)
-        imgROI = imgMat(Rect(x, y, width, height));
-    imwrite(saveImagePath, imgROI);
-
-}
-
-long Analyze::getStartFrame(int trackerId){
-
-    long sframe = 1;
-
-    std::vector< std::string > *v = &trackerResults[trackerId];
-
-    for (int i = 0; i < v->size(); i++){
-        if (v->at(i).compare("-") != 0)
-            break;
-        sframe++;
-    }
-
-    return sframe;
-
-}
-
-bool Analyze::isGroup(std::string group){
-
-    return groupNameToId.find(group) != groupNameToId.end();
-
-}
-
-bool Analyze::isTracker(std::string tracker){
-
-    return trackerNameToId.find(tracker) != trackerNameToId.end();
-
-}
-
-void Analyze::getStats(){
-
-    for (int g = 0; g < numGroups; g++){
-       int groupId = g;
-
-       for (int i = 0; i < trackersPerGroup[groupId].size(); i++){
-            int trackerId = trackersPerGroup[groupId][i];
-            std::vector< std::string >& result = trackerResults[trackerId];
-            long starting;
-            long ending;
-            bool tracking = false;
-            for (long j = 0; j < endFrames[trackerId]; j++){
-                QStringList frame = QString(result[j].c_str()).split(QString(" "));
-                std::string first = frame[0].toStdString();
-
-                if (first.compare("-") != 0){
-                    if (!tracking){
-                        starting = j + 1;
-                    }
-                    tracking = true;
-                      if (!groupAppearances[groupId][j]){
-                        groupCounts[groupId]++;
-                        groupAppearances[groupId][j] = true;
-                    }
-                    trackerAppearances[trackerId][j] = true;
-                    trackerCounts[trackerId]++;
-
-                } else {
-                    if (tracking){
-                    ending = j + 1;
-                    vector<long>& l = startStopFrames[trackerId];
-                    l.push_back(starting);
-                    l.push_back(ending);
-                    tracking = false;
-                    }
-                }
-            }
-        }
-    }
-
-    for (int t = 0; t < numTrackers; t++){
-        startFrames.push_back(getStartFrame(t));
-    }
-
-
-
-}
-
-void Analyze::getCommand(QStringList& commandParts, bool& success){
-
-    success = false;
-
-    QString info = aWin->toPlainText();
-    QStringList commands = info.split("$ ");
-    QString command = commands[commands.size() - 1];
-    commandParts.clear();
-    commandParts = command.split(" ");
-
-    if (commandParts.size() > 0 && commandParts[0].compare("") != 0){
-         std::string end = commandParts[commandParts.size() - 1].toStdString();
-         if (end[end.size() - 1] == '\n'){
-            success = true;
-            end = end.substr(0, end.size() - 1);
-            commandParts[commandParts.size() - 1] = QString(end.c_str());
-         }
-    }
-
-}
-
-bool Analyze::parse(){
-
-    std::string iniPath = analysisImagesPath + "groupSettings.ini";
-    std::ifstream infile(iniPath.c_str());
-    QSettings* settingsIn = new QSettings(QString(iniPath.c_str()), QSettings::IniFormat);
-    if (!infile || settingsIn->status() != QSettings::NoError){
-        std::cerr << "Failed to open initialization file\n" << std::endl;
-        return false;
-    }
-
-    settingsIn->beginGroup("Info");
-    //is it ok that this is to long long instead of just long
-    frameCount = settingsIn->value("FrameCount").toLongLong();
-    settingsIn->endGroup();
-
-    settingsIn->beginGroup("GroupNames");
-    QString groupsString = settingsIn->value("Names").toString();
-    settingsIn->endGroup();
-    QStringList groupsStringList = groupsString.split(' ');
-
-    for (int i = 0; i < groupsStringList.size(); i++){
-        groupNameToId.insert(std::pair<string, int>(groupsStringList[i].toStdString(), i));
-        idToGroupName.insert(std::pair<int, string>(i, groupsStringList[i].toStdString()));
-        settingsIn->beginGroup(groupsStringList[i].toStdString().c_str());
-        int red = settingsIn->value("Red").toInt();
-        int green = settingsIn->value("Green").toInt();
-        int blue = settingsIn->value("Blue").toInt();
-        settingsIn->endGroup();
-        struct colors *c = new struct colors;
-        c->r = red;
-        c->g = green;
-        c->b = blue;
-        groupColors.push_back(c);
-        std::string groupFilePath = analysisImagesPath + groupsStringList[i].toStdString() + ".txt";
-        QFile file(groupFilePath.c_str());
-        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return false;
-        QTextStream in(&file);
-        QString text;
-        text = in.readAll();
-        file.close();
-        QStringList trackersFromFile = text.split("#");
-        std::vector<int> trackerNumbersInGroup;
-        for (int i = 1; i < trackersFromFile.size(); i+=2){
-            std::string trackerName = trackersFromFile[i].toStdString().substr(1, trackersFromFile[1].size() - 2);
-
-            trackerNameToId.insert(std::pair<string, int>(trackerName, numTrackers));
-            idToTrackerName.insert(std::pair<int, string>(numTrackers, trackerName));
-            QString trackerResultsString = trackersFromFile[i+1];
-            QStringList trackerResultsPerFrame = trackerResultsString.split('\n');
-            std::vector< std::string > v;
-            for (int j = 1; j < trackerResultsPerFrame.size(); j++){
-                v.push_back(trackerResultsPerFrame[j].toStdString());
-            }
-            trackerResults.push_back(v);
-            endFrames.push_back(trackerResultsPerFrame.size() - 1);
-            trackerNumbersInGroup.push_back(numTrackers);
-            trackersToGroupMap.insert(std::pair<int, int>(numTrackers, numGroups));
-            numTrackers++;
-        }
-        trackersPerGroup.push_back(trackerNumbersInGroup);
-        numGroups++;
-    }
-
-    for (int i = 0; i < numTrackers; i++){
-
-        std::vector<bool> v(frameCount);
-        trackerAppearances.push_back(v);
-        trackerCounts.push_back(0L);
-        std::vector<long> l;
-        startStopFrames.push_back(l);
-    }
-
-    for (int i = 0; i < numGroups; i++){
-
-        std::vector<bool> v(frameCount);
-        groupAppearances.push_back(v);
-        groupCounts.push_back(0L);
-    }
-
-
-    getStats();
-
-    return true;
-
-}
-
-void Analyze::fillTotalAppearancesAND(std::vector <std::string>& list, std::vector<bool> &totalAppearances){
-
-    for (int f = 0; f < totalAppearances.size(); f++){
-
-        bool b;
-
-        if (isGroup(list[0]))
-            b = (groupAppearances[groupNameToId[list[0]]])[f];
-        else
-            b = (trackerAppearances[trackerNameToId[list[0]]])[f];
-
-        for (int i = 0; i < list.size(); i++){
-
-            if (isGroup(list[i]))
-                b = b && (groupAppearances[groupNameToId[list[i]]])[f];
-            else
-                b = b && (trackerAppearances[trackerNameToId[list[i]]])[f];
-
-        }
-
-        totalAppearances[f] = b;
-
-
-    }
-
-}
-
-void Analyze::fillTotalAppearancesOR(std::vector <std::string>& list, std::vector<bool> &totalAppearances){
-
-    for (int i = 0; i < list.size(); i++){
-
-        std::vector<bool> g;
-
-        if (isGroup(list[i]))
-            g = groupAppearances[groupNameToId[list[i]]];
-        else
-            g = trackerAppearances[trackerNameToId[list[i]]];
-
-        for (long i = 0; i < g.size(); i++){
-            if (g[i])
-                totalAppearances[i] = true;
-        }
-    }
-
-
-
-}
-
-void Analyze::show(QStringList& command){
-
-    std::cout << "show" << std::endl;
-
-    if (command.size() != 2){
-       userError("show: Incorrect command format.");
-       return;
-    }
-
-    std::string name = command[1].toStdString();
-    if (!isTracker(name)){
-        userError("show: Name given is not a tracker.");
-        return;
-    }
-
-    int trackerId = trackerNameToId[name];
-    std::vector<bool>& appearances = trackerAppearances[trackerId];
-    std::vector< std::string >& result = trackerResults[trackerId];
-
-    std::string imagePath;
-    char num[64];
-
-    std::cout << "start frame: "  + QString::number(startFrames[trackerId]).toStdString() + " end frame: "  + QString::number(endFrames[trackerId]).toStdString() << std::endl;
-
-    for (long i = startFrames[trackerId] - 1; i < endFrames[trackerId]; i++){
-
-        graphImg.copyTo(graphImgCrop);
-        cv::resize(graphImgCrop, graphImgCrop, cv::Size(), (double)smallVideoWidth/graphImg.cols,(double)smallVideoHeight/graphImg.rows);
-
-        QStringList frame = QString(result[i].c_str()).split(QString(" "));
-
-        imagePath = analysisImagesPath;
-        memset(num, 0, 64);
-        sprintf(num, "%07ld", i);
-        imagePath += QString(num).toStdString();
-        imagePath += std::string(".png");
-
-        cv::Mat img = imread(imagePath.c_str(), 1);
-        cv::Mat imgResized;
-        img.copyTo(imgResized);
-
-        int x;
-        int y;
-        int width = frame[2].toInt();
-        int height = frame[3].toInt();
-
-        if (frame[0].toInt() < 0)
-            x = 0;
-        else
-            x = frame[0].toInt();
-        if (frame[1].toInt() < 0)
-            y = 0;
-        else
-            y = frame[1].toInt();
-
-        cv::Rect roi( cv::Point(x, y), cv::Size(width, height));
-        imgResized = imgResized( roi );
-
-        resize(img, imgResized, Size(), fxSmallVideo, fySmallVideo, CV_INTER_AREA);
-
-        double xd = smallVideoWidth/2 - (double)width/2;
-        double yd = smallVideoHeight/2 - (double)width/2;
-
-        cv::Rect loc( cv::Point( xd, yd ), cv::Size( width, height ));
-        cv::Mat regionOfInterest = graphImgCrop( loc );
-        imgResized.copyTo( regionOfInterest );
-
-        std::cout << frame[0].toStdString() + " "  + frame[1].toStdString() + " "  + frame[2].toStdString() + " " + frame[3].toStdString() << std::endl;
-
-        analyzeGui->showImage(imgResized, twoName);
-
-    }
-
-
-}
+/* Function: man(std::string command)
+ * -----------------------------------
+ * Gives man data about the commands.
+ */
 
 void Analyze::man(std::string command){
 
-    if (command.compare("man") == 0);
+    if (command.compare("man") == 0) {
+        aWin->insertHtml(QString("<p><b>Commands:</b><br></p>"));
+        aWin->insertHtml(QString("<p>Type \"man\" followed by any of the commands to learn more: play, info, quit.<br><br></p>"));
 
-      if (command.compare("show") == 0);
+    }
 
+    if (command.compare("info") == 0) {
+
+        aWin->insertHtml(QString("<p><b>info</b><br></p>"));
+        aWin->insertHtml(QString("<p>The \"info\" command allows you to information about trackers. You may want to see which trackers you created <i>(info)</i>, information about a paricular tracker <i>(info -tracker face)</i>, or coordinates of a particular tracker on a particular frame <i>(info -tracker face 102)</i>. Flags and commands: <br><br></p>"));
+        aWin->insertHtml(QString("<b>info</b><br>"));
+        aWin->insertHtml(QString("Info all<br>"));
+        aWin->insertHtml(QString("<b>info -tracker name</b><br>"));
+        aWin->insertHtml(QString("Information about tracker \"name\"<br>"));
+        aWin->insertHtml(QString("<b>play -tracker name frameNum</b><br>"));
+        aWin->insertHtml(QString("Coordinates of tracker \"name\" at frameNum<br>"));
+    }
 
     if (command.compare("play") == 0){
 
         aWin->insertHtml(QString("<p><b>play</b><br></p>"));
-        aWin->insertHtml(QString("<p>The \"play\" command allows you to see various segments of your video. You may, for example, want to watch all of it <i>(play -a)</i>, watch only some of it <i>(play -start 10 -end 50)</i>, watch only part of the video with tracker \"ball\" <i>(play -combo ball)</i>, or simply watch only those segments with your entire family <i>(play -combo mom && dad && sister && me)</i>. When the \"play\" command runs, Simba also creates a visual representation of segments across frames that have been tracked. Flags and commands: <br><br></p>"));
+        aWin->insertHtml(QString("<p>The \"play\" command allows you to see various segments of your video. You may, for example, want to watch all of it <i>(play -a)</i>, watch only some of it <i>(play -start 10 -end 50)</i>, watch only part of the video with tracker \"ball\" <i>(play -combo ball)</i>, or simply watch only those segments with your entire family <i>(play -combo mom && dad && sister && me)</i>. Flags and commands: <br><br></p>"));
         aWin->insertHtml(QString("<b>play -a</b><br>"));
         aWin->insertHtml(QString("Play all<br>"));
         aWin->insertHtml(QString("<b>play -start startFrame -end endFrame</b><br>"));
         aWin->insertHtml(QString("Play tracked images from startFrame to endFrame<br>"));
         aWin->insertHtml(QString("<b>play -combo tracker1 group2 ... </b><br>"));
         aWin->insertHtml(QString("Play tracked images of tracker1, group2...<br>"));
-
     }
 
+    if (command.compare("quit") == 0){
 
-}
-
-bool Analyze::check(std::vector<std::string>& list){
-
-    bool ok = true;
-
-    for (int i = 0; i < list.size(); i++){
-
-        if (!isGroup(list[i]) && !isTracker(list[i])){
-           aWin->insertHtml(QString(list[i].c_str()) + QString(" is neither a tracker nor group.<br>"));
-           ok = false;
-        }
-
+        aWin->insertHtml(QString("<p><b>quit</b><br></p>"));
+        aWin->insertHtml(QString("<p>The \"quit\" command quits the program. <br><br></p>"));
     }
-
-    return ok;
-
 }
 
-void Analyze::userError(std::string e){
-    aWin->insertHtml(QString(e.c_str()) + QString("<br>"));
-}
+/* Function: play(QStringList& command)
+ * -----------------------------------
+ * Plays segments of video
+ */
 
 void Analyze::play(QStringList& command){
 
@@ -442,8 +92,6 @@ void Analyze::play(QStringList& command){
     bool combo = false;
     bool single = false;
     std::vector<bool> totalAppearances(frameCount);
-    graphImg.copyTo(graphImgCrop);
-    resize(graphImgCrop, graphImgCrop, Size(), (double)intelWidth/graphImg.cols, (double)intelHeight/graphImg.rows);
 
     long startFrame = 1;
     long endFrame = frameCount;
@@ -570,13 +218,9 @@ void Analyze::play(QStringList& command){
     std::string imagePath;
     char num[64];
 
-    std::cout << QString::number(startFrame).toStdString() << std::endl;
-
     if (combo || single)
         while (!totalAppearances[startFrame - 1])
             startFrame++;
-
-    std::cout << QString::number(startFrame).toStdString() << std::endl;
 
     while (startFrame < endFrame) {
 
@@ -589,84 +233,120 @@ void Analyze::play(QStringList& command){
            showVideoImage(startFrame, oneName);
         }
 
-        if (xCoord > intelWidth){
-            graphImg.copyTo(graphImgCrop);
-            cv::resize(graphImgCrop, graphImgCrop, cv::Size(), (double)intelWidth/graphImg.cols,(double)intelHeight/graphImg.rows);
-            xCoord = 20;
-        }
-
-        if (combo || single){
-            for (int i = 0; i < numGraphLines; i++){
-                int id;
-                bool draw;
-                int colorId;
-                if (isGroup(list[i])){
-
-                    id = groupNameToId[list[i]];
-                    colorId = id;
-                    draw = groupAppearances[id][startFrame - 1];
-                }
-                else {
-                    id = trackerNameToId[list[i]];
-                    colorId = trackersToGroupMap[id];
-                    draw = trackerAppearances[id][startFrame - 1];
-                }
-
-                if (draw){
-                   struct colors* c = groupColors[colorId];
-                   CvScalar pointColor = CV_RGB(c->r, c->g, c->b);
-                   int start = (i+1)*(intelHeight/5);
-                   int yCoord = intelHeight - start;
-                   line(graphImgCrop, cvPoint(xCoord, yCoord), cvPoint(xCoord, yCoord - 6), pointColor, 2);
-                }
-            }
-        }
-
-        if (combo){
-            if (totalAppearances[startFrame - 1]){
-                CvScalar pointColor = CV_RGB(255, 255, 255);
-                int start = (numGraphLines+2)*(intelHeight/6);
-                int yCoord = intelHeight - start;
-                line(graphImgCrop, cvPoint(xCoord, yCoord), cvPoint(xCoord, yCoord - 6), pointColor, 2);
-             }
-        }
-
-        if (!combo && !single) {
-          for (int i = 0; i < numGroups; i++){
-                int id = i;
-                bool draw;
-                draw = groupAppearances[id][startFrame - 1];
-
-                if (draw){
-                   struct colors* c = groupColors[i];
-                   CvScalar pointColor = CV_RGB(c->r, c->g, c->b);
-                   int start = (i+1)*(intelHeight/6);
-                   int yCoord = intelHeight - start;
-                   line(graphImgCrop, cvPoint(xCoord, yCoord), cvPoint(xCoord, yCoord - 6), pointColor, 2);
-                }
-          }
-        }
-
-        xCoord++;
-
-        analyzeGui->showImage(graphImgCrop, intelName);
-
         cvWaitKey(30);
         startFrame++;
-
     }
 
 }
 
+/* Function: getCoordinates(long frame, std::string tracker, int& x, int& y, int& width, int& height)
+ * -----------------------------------
+ * Fills x, y, width, and height with appropriate results from given tracker/frame.
+ */
+
+bool Analyze::getCoordinates(long frame, std::string tracker, int& x, int& y, int& width, int& height){
+
+    int id = trackerNameToId[tracker];
+
+    std::string result = trackerResults[id][frame - 1];
+    QStringList s = QString(result.c_str()).split(",");
+    x = s[0].toInt();
+    y = s[1].toInt();
+    width = s[2].toInt();
+    height = s[3].toInt();
+
+}
+
+/* Function: info(QStringList& command)
+ * -----------------------------------
+ * Gets information about trackers.
+ */
+
+
+void Analyze::info(QStringList& command){
+
+    std::cout << "entered" << std::endl;
+    std::cout << QString::number(command.size()).toStdString() << std::endl;
+    if (command.size() == 1){
+
+        aWin->insertHtml(QString("<u>Trackers</u><br>"));
+        for (int i = 0; i < numTrackers; i++){
+            aWin->insertHtml(QString(idToTrackerName[i].c_str()) + QString(", ") + QString("Group: ") + QString(idToGroupName[trackersToGroupMap[i]].c_str()) + QString("<br>"));
+
+        }
+
+
+    }
+
+    if (command.size() == 3 && command[1].compare("-tracker") == 0){
+
+        if (!isTracker(command[2].toStdString())){
+            userError("Not a tracker");
+            return;
+        }
+
+        aWin->insertHtml(QString("<u>") + command[2] + QString("</u><br>"));
+        int id = trackerNameToId[command[2].toStdString()];
+        aWin->insertHtml(QString("Group: ") + QString(idToGroupName[trackersToGroupMap[id]].c_str()) + QString("<br>"));
+        std::vector<bool>& appearances = trackerAppearances[id];
+        long count = 0;
+        for (int i = 0; i < appearances.size(); i++){
+            if (appearances[i]) count++;
+        }
+        long totalFrames = endFrames[id] - startFrames[id] + 1;
+        double percentDetections = (double)count/totalFrames;
+        double totalPercentDetections = (double)count/frameCount;
+
+        aWin->insertHtml(QString("Total Frames: ") +  QString::number(frameCount) + QString("<br>"));
+        aWin->insertHtml(QString("Start frame: ") + QString::number(startFrames[id]) + QString(" End Frame: ") + QString::number(endFrames[id]) + QString("<br>"));
+
+        aWin->insertHtml(QString("Number of detections: ") + QString::number(count) + QString("<br>"));
+        \
+        aWin->insertHtml(QString("% Detections from start to end frame: ") + QString::number(percentDetections) + QString("<br>"));
+        aWin->insertHtml(QString("% Detections in entire video: ") + QString::number(totalPercentDetections) + QString("<br>"));
+
+    }
+
+    if (command.size() == 4 && command[1].compare("-tracker") == 0){
+
+        if (!isTracker(command[2].toStdString())){
+            userError("Not a tracker");
+            return;
+        }
+
+        bool ok;
+        long frame = command[3].toLong(&ok);
+        if (!ok){
+            userError("Not a number");
+            return;
+        }
+
+        int id = trackerNameToId[command[2].toStdString()];
+
+        if (frame > endFrames[id]){
+            userError("Out of bounds");
+            return;
+        }
+
+        int x, y, width, height;
+        getCoordinates(frame, command[2].toStdString(), x, y, width, height);
+
+        aWin->insertHtml(QString::number(x) + QString(" ") + QString::number(y) + QString(" ") + QString::number(width) + QString(" ") + QString::number(height) + QString("<br>"));
+
+    }
+
+
+}
+
+/* Function: doWork()
+ * -----------------------------------
+ * Gets commands from user and executes commands.
+ */
+
 int Analyze::doWork() {
 
     parse();
-    debugAnalyze();
-
     showVideoImage(1, oneName);
-    showVideoImage(1, twoName);
-    analyzeGui->showImage(graphImgCrop, intelName);
-
 
     aWin->insertHtml(QString("Simba$ "));
     QStringList command;
@@ -683,6 +363,7 @@ int Analyze::doWork() {
         if (success){
 
             action = command[0].toStdString();
+            std::cout << action << std::endl;
 
             if (action.compare("man") == 0){
                 if (command.size() != 2)
@@ -694,27 +375,364 @@ int Analyze::doWork() {
             if (action.compare("play") == 0)
                 play(command);
 
-
-
-            if (action.compare("show") == 0)
-                show(command);
-
-
             if (action.compare("quit") == 0)
                 break;
 
-            aWin->insertHtml(QString("Simba$ "));
+            if (action.compare("info") == 0){
+                info(command);
+            }
 
+            aWin->insertHtml(QString("Simba$ "));
+        }
+
+       app->processEvents();
+    }
+
+   return 1;
+}
+
+
+/* Function: initGui(int videoX, int videoY)
+ * ------------------------------------------
+ * Sets up the window to display the tracked images
+ */
+
+void Analyze::initGui(int videoX, int videoY){
+
+    analyzeGui->initGui(videoX, videoY, oneName);
+
+}
+
+/* Function: getImagePath(long frame)
+ * ------------------------------------------
+ * Gets image for the provided frame number from the analysisImagesPath directory
+ */
+
+std::string Analyze::getImagePath(long frame){
+
+    std::string imagePath = analysisImagesPath;
+    char num[64];
+    memset(num, 0, 64);
+    sprintf(num, "%07ld", frame);
+    imagePath += QString(num).toStdString();
+    imagePath += std::string(".png");
+    return imagePath;
+}
+
+/* Function: showVideoImage(long frame, std::string winName)
+ * ------------------------------------------
+ * Shows a particular frame on the gui window.
+ */
+
+void Analyze::showVideoImage(long frame, std::string winName){
+
+    std::string imagePath = getImagePath(frame);
+    cv::Mat img = imread(imagePath.c_str(), 1);
+    analyzeGui->showImage(img, winName);
+
+}
+
+/* Function: saveImage(long frame, std::string saveImagePath, bool crop, int x, int y, int width, int height)
+ * ------------------------------------------
+ * Crops an image and saves it in the analysisImagesPath directory.
+ */
+
+void Analyze::saveImage(long frame, std::string saveImagePath, bool crop, int x, int y, int width, int height){
+
+    std::string imagePath = analysisImagesPath;
+    char num[64];
+    memset(num, 0, 64);
+    sprintf(num, "%07ld", frame);
+    imagePath += QString(num).toStdString();
+    imagePath += std::string(".png");
+
+    cv::Mat imgMat = imread(imagePath, 1);
+    cv::Mat imgROI = imgMat;
+    if (crop)
+        imgROI = imgMat(Rect(x, y, width, height));
+    imwrite(saveImagePath, imgROI);
+
+}
+
+/* Function: getStartFrame(int trackerId)
+ * ------------------------------------------
+ * Gets the starting frame for a particular tracker.
+ */
+
+long Analyze::getStartFrame(int trackerId){
+
+    long sframe = 1;
+
+    std::vector< std::string > *v = &trackerResults[trackerId];
+
+    for (int i = 0; i < v->size(); i++){
+        if (v->at(i).compare("0,0,0,0") != 0)
+            break;
+        sframe++;
+    }
+
+    return sframe;
+
+}
+
+/* Function: isGroup(std::string group)
+ * ------------------------------------------
+ * True if given string is an existing group.
+ */
+
+bool Analyze::isGroup(std::string group){
+
+    return groupNameToId.find(group) != groupNameToId.end();
+
+}
+
+/* Function: isTracker(std::string group)
+ * ------------------------------------------
+ * True if given string is an existing tracker
+ */
+
+bool Analyze::isTracker(std::string tracker){
+
+    return trackerNameToId.find(tracker) != trackerNameToId.end();
+
+}
+
+/* Function: getStats()
+ * ------------------------------------------
+ * Fills the trackerAppearances and groupAppearances vectors.
+ */
+
+void Analyze::getStats(){
+
+    for (int g = 0; g < numGroups; g++){
+       int groupId = g;
+
+       for (int i = 0; i < trackersPerGroup[groupId].size(); i++){
+            int trackerId = trackersPerGroup[groupId][i];
+            std::vector< std::string >& result = trackerResults[trackerId];
+            long starting;
+            long ending;
+            bool tracking = false;
+            for (long j = 0; j < endFrames[trackerId]; j++){
+                std::string first = result[j];
+                if (first.compare("0,0,0,0") != 0){
+                    if (!tracking){
+                        starting = j + 1;
+                    }
+                    tracking = true;
+                      if (!groupAppearances[groupId][j]){
+                        groupCounts[groupId]++;
+                        groupAppearances[groupId][j] = true;
+                    }
+                    trackerAppearances[trackerId][j] = true;
+                    trackerCounts[trackerId]++;
+                } else {
+                    if (tracking){
+                    ending = j + 1;
+                    vector<long>& l = startStopFrames[trackerId];
+                        l.push_back(starting);
+                        l.push_back(ending);
+                        tracking = false;
+                    }
+                }
+            }
+        }
+    }
+
+    for (int t = 0; t < numTrackers; t++){
+        startFrames.push_back(getStartFrame(t));
+    }
+
+}
+
+/* Function: getCommand(QStringList& commandParts, bool& success)
+ * ------------------------------------------
+ * Gets command from user.
+ */
+
+
+void Analyze::getCommand(QStringList& commandParts, bool& success){
+
+    success = false;
+
+    QString info = aWin->toPlainText();
+    QStringList commands = info.split("$ ");
+    QString command = commands[commands.size() - 1];
+    commandParts.clear();
+    commandParts = command.split(" ");
+
+    if (commandParts.size() > 0 && commandParts[0].compare("") != 0){
+         std::string end = commandParts[commandParts.size() - 1].toStdString();
+         if (end[end.size() - 1] == '\n'){
+            success = true;
+            end = end.substr(0, end.size() - 1);
+            commandParts[commandParts.size() - 1] = QString(end.c_str());
+         }
+    }
+
+}
+
+/* Function: parse()
+ * ------------------------------------------
+ * Parses csv files and groupSettings.ini
+ */
+
+bool Analyze::parse(){
+
+    std::string iniPath = analysisImagesPath + "groupSettings.ini";
+    std::ifstream infile(iniPath.c_str());
+    QSettings* settingsIn = new QSettings(QString(iniPath.c_str()), QSettings::IniFormat);
+    if (!infile || settingsIn->status() != QSettings::NoError){
+        std::cerr << "Failed to open initialization file\n" << std::endl;
+        return false;
+    }
+
+    settingsIn->beginGroup("Info");
+    //is it ok that this is to long long instead of just long
+    frameCount = settingsIn->value("FrameCount").toLongLong();
+    settingsIn->endGroup();
+
+    settingsIn->beginGroup("GroupNames");
+    QString groupsString = settingsIn->value("Names").toString();
+    settingsIn->endGroup();
+    QStringList groupsStringList = groupsString.split(' ');
+
+    for (int i = 0; i < groupsStringList.size(); i++){
+        groupNameToId.insert(std::pair<string, int>(groupsStringList[i].toStdString(), i));
+        idToGroupName.insert(std::pair<int, string>(i, groupsStringList[i].toStdString()));
+        settingsIn->beginGroup(groupsStringList[i].toStdString().c_str());
+        int red = settingsIn->value("Red").toInt();
+        int green = settingsIn->value("Green").toInt();
+        int blue = settingsIn->value("Blue").toInt();
+
+        struct colors *c = new struct colors;
+        c->r = red;
+        c->g = green;
+        c->b = blue;
+        groupColors.push_back(c);
+        QString s = settingsIn->value("Trackers").toString();
+        QStringList trackersStringList = s.split(' ');
+        settingsIn->endGroup();
+        std::vector<int> v;
+
+
+        for (int j = 0; j < trackersStringList.size(); j++){
+            std::string trackerName = trackersStringList[j].toStdString();
+            std::string filePath = analysisImagesPath + groupsStringList[i].toStdString() + trackerName + ".csv";
+            QFile file(filePath.c_str());
+            if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return false;
+            QTextStream in(&file);
+            QString text;
+            text = in.readAll();
+            file.close();
+            trackerNameToId.insert(std::pair<string, int>(trackerName, numTrackers));
+            idToTrackerName.insert(std::pair<int, string>(numTrackers, trackerName));
+            v.push_back(numTrackers);
+            QStringList trackerResultsPerFrame = text.split('\n');
+            std::vector< std::string > v;
+            for (int j = 0; j < trackerResultsPerFrame.size(); j++){
+                v.push_back(trackerResultsPerFrame[j].toStdString());
+            }
+            trackerResults.push_back(v);
+            endFrames.push_back(trackerResultsPerFrame.size());
+            trackersToGroupMap.insert(std::pair<int, int>(numTrackers, numGroups));
+            numTrackers++;
+        }
+        trackersPerGroup.push_back(v);
+        numGroups++;
+    }
+
+    for (int i = 0; i < numTrackers; i++){
+
+        std::vector<bool> v(frameCount);
+        trackerAppearances.push_back(v);
+        trackerCounts.push_back(0L);
+        std::vector<long> l;
+        startStopFrames.push_back(l);
+    }
+
+    for (int i = 0; i < numGroups; i++){
+
+        std::vector<bool> v(frameCount);
+        groupAppearances.push_back(v);
+        groupCounts.push_back(0L);
+    }
+
+    getStats();
+    return true;
+
+}
+
+/* Function: fillTotalAppearancesAND(std::vector <std::string>& list, std::vector<bool> &totalAppearances)
+ * ------------------------------------------
+ * Populates a vector with appearances of trackers/group part of list using "AND." I.e. totalApperances[0] is
+ * true only if every tracker or group is the list made an appearance at frame 0.
+ */
+
+void Analyze::fillTotalAppearancesAND(std::vector <std::string>& list, std::vector<bool> &totalAppearances){
+
+    for (int f = 0; f < totalAppearances.size(); f++){
+
+        bool b;
+
+        if (isGroup(list[0]))
+            b = (groupAppearances[groupNameToId[list[0]]])[f];
+        else
+            b = (trackerAppearances[trackerNameToId[list[0]]])[f];
+
+        for (int i = 0; i < list.size(); i++){
+            if (isGroup(list[i]))
+                b = b && (groupAppearances[groupNameToId[list[i]]])[f];
+            else
+                b = b && (trackerAppearances[trackerNameToId[list[i]]])[f];
 
         }
 
-
-
-        app->processEvents();
+        totalAppearances[f] = b;
     }
 
-   return 2;
 }
+
+/* Function: fillTotalAppearancesOR(std::vector <std::string>& list, std::vector<bool> &totalAppearances)
+ * ------------------------------------------
+ * Populates a vector with appearances of trackers/group part of list using "OR." I.e. totalApperances[0] is
+ * true only if any one of the trackers or groups is the list made an appearance at frame 0.
+ */
+
+void Analyze::fillTotalAppearancesOR(std::vector <std::string>& list, std::vector<bool> &totalAppearances){
+
+    for (int i = 0; i < list.size(); i++){
+
+        std::vector<bool> g;
+
+        if (isGroup(list[i]))
+            g = groupAppearances[groupNameToId[list[i]]];
+        else
+            g = trackerAppearances[trackerNameToId[list[i]]];
+
+        for (long i = 0; i < g.size(); i++){
+            if (g[i])
+                totalAppearances[i] = true;
+        }
+    }
+
+
+
+}
+
+/* Function: userError(std::string e)
+ * -----------------------------------
+ * Outputs error to the user.
+ */
+
+void Analyze::userError(std::string e){
+    aWin->insertHtml(QString(e.c_str()) + QString("<br>"));
+}
+
+/* Function: debugAnalyze()
+ * -------------------------
+ * Debugging function.
+ */
 
 void Analyze::debugAnalyze(){
 
@@ -725,9 +743,6 @@ void Analyze::debugAnalyze(){
         std::cout << QString::number(i).toStdString() + ":" + s << std::endl;
         std::cout << QString::number(trackerNameToId[s]).toStdString() + ":" + s << std::endl;
     }
-
-
-
       std::cout << "Printing  id to groupname" << std::endl;
 
     for (int i = 0; i < idToGroupName.size(); i++){
@@ -817,9 +832,5 @@ std::cout << "Printing  trackers per group" << std::endl;
 
       std::cout << std::endl;
       }
-
-
-
-
 }
 

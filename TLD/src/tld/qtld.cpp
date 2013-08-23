@@ -156,7 +156,7 @@ int main(int argc, char **argv)
         if (videoWidth > desktopWidth || videoHeight > desktopHeight){
             QMessageBox msgBox;
             msgBox.setStyleSheet(QString("font: 14pt \"Source Sans Pro\""));
-            QString t = QString("Images too big for the size of your screen (") + QString::number(desktopWidth) + QString(" x ") + QString::number(desktopHeight) + QString("). See our tutorial on using ffmpeg for image size changing.");
+            QString t = QString("Images too big for the size of your screen (") + QString::number(desktopWidth) + QString(" x ") + QString::number(desktopHeight) + QString("). See our instructions on using ffmpeg for image size changing.");
             msgBox.setText(t);
             msgBox.exec();
             delete settings;
@@ -164,8 +164,13 @@ int main(int argc, char **argv)
 
         }
 
-        double videoX = desktopWidth/2 - (double)videoWidth/2;
+        int spacing = 50;
+        double controlWidth = desktopWidth/4;
+        double controlHeight = videoHeight;
+        double videoX = desktopWidth/2 - (double)(videoWidth + controlWidth + spacing)/2;
         double videoY = desktopHeight/2 - (double)videoHeight/2;
+        double controlX = videoX + videoWidth + spacing;
+        double controlY = videoY;
 
         if (settings->m_track){
 
@@ -205,10 +210,19 @@ int main(int argc, char **argv)
                .track_deform_shift = settings->track_deform_shift,
            };
 
-            Main *main = new Main(settings, ccv_tld_params);
-            main->initGui(videoX, videoY);
 
-            err = main->doWork(settings);
+            QTextEdit* aWin = new QTextEdit;
+            aWin->resize(controlWidth, controlHeight);
+            aWin->setWindowTitle("Simba");
+            aWin->move(controlX, controlY);
+            QString b("QWidget {background-color: black}\nQWidget {color: rgb(255, 255, 255)}\nQWidget {font: 14pt \"Source Sans Pro\"}");
+            aWin->setStyleSheet(b);
+            aWin->show();
+            aWin->append(QString("Track Learn Detect\n"));
+
+            Main *main = new Main(settings, ccv_tld_params, videoX, videoY, aWin);
+
+            err = main->track(settings);
 
             if (err == 0){
               QMessageBox msgBox;
@@ -217,54 +231,23 @@ int main(int argc, char **argv)
               msgBox.exec();
               delete main;
               delete settings;
+              aWin->close();
+              delete aWin;
               continue;
+            }
+            if (err == 2){
+                QMessageBox msgBox;
+                msgBox.setStyleSheet(QString("font: 14pt \"Source Sans Pro\""));
+                msgBox.setText("Unable to load images.");
+                msgBox.exec();
             }
 
             delete main;
+            aWin->close();
+            delete aWin;
         }
 
         if (settings->m_analyze){
-
-            //Window positioning
-
-            int spacing = 50;
-
-            double controlWidth = desktopWidth/4;
-            double controlHeight = desktopHeight * (4.0/5);
-            double smallVideoHeight = videoHeight;
-            double smallVideoWidth = videoWidth;
-            double fx;
-            double fy;
-
-            if (smallVideoHeight > controlHeight/2){
-                smallVideoHeight = controlHeight/2;
-                fy = smallVideoHeight/videoHeight;
-                fx = fy;
-                smallVideoWidth = videoWidth * fx;
-            }
-
-            while (smallVideoWidth*2 + spacing*4 + controlWidth > desktopWidth){
-                smallVideoWidth *= .95;
-                smallVideoHeight *= .95;
-            }
-
-            double intelWidth = 2*smallVideoWidth + spacing;
-            double intelHeight = controlHeight - spacing - smallVideoHeight;
-
-            double windowWidth = controlWidth + intelWidth + spacing;
-            double windowHeight = controlHeight;
-            double windowX = desktopWidth/2 - windowWidth/2;
-            double windowY = desktopHeight/2 - windowHeight/2;
-
-            double controlX = windowWidth - controlWidth + windowX;
-            double controlY = windowY;
-            double intelX = windowX;
-            double intelY = windowY;
-
-            double oneX = intelX;
-            double oneY = intelY + intelHeight + spacing;
-            double twoX = oneX + smallVideoWidth + spacing;
-            double twoY = oneY;
 
             QTextEdit* aWin = new QTextEdit;
             aWin->resize(controlWidth, controlHeight);
@@ -276,18 +259,16 @@ int main(int argc, char **argv)
             aWin->append(QString("Track Learn Detect\n"));
 
             std::string oneName = "One";
-            std::string twoName = "Two";
-            std::string intelName = "Intel";
             bool ok = true;
-            Analyze *analyze = new Analyze(aWin, settings->m_analysisImagesPath, oneName, twoName, intelName, smallVideoWidth, smallVideoHeight, intelWidth, intelHeight, qApp, ok);
+            Analyze *analyze = new Analyze(aWin, settings->m_analysisImagesPath, oneName, qApp, ok);
 
             if (ok){
 
-                analyze->initGui(oneX, oneY, twoX, twoY, intelX, intelY);
+                analyze->initGui(videoX, videoY);
 
                 err = analyze->doWork();
 
-                if (err == 1){
+                if (err == 2){
                     QMessageBox msgBox;
                     msgBox.setStyleSheet(QString("font: 14pt \"Source Sans Pro\""));
                     msgBox.setText("Missing files - make sure ini, txt, and png files aren't misplaced.");

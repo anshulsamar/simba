@@ -18,7 +18,7 @@ class Analyze
 {
 public:
 
-    Analyze(QTextEdit* aWin, std::string analysisImagesPath, std::string oneName, std::string twoName,  std::string intelName, int smallVideoWidth, int smallVideoHeight, int intelWidth, int intelHeight, QApplication* app, bool& ok) {
+    Analyze(QTextEdit* aWin, std::string analysisImagesPath, std::string oneName, QApplication* app, bool& ok) {
         analyzeGui = new AnalyzeGui();
         numGroups = 0;
         numTrackers = 0;
@@ -26,67 +26,38 @@ public:
         this->aWin = aWin;
         this->analysisImagesPath = analysisImagesPath;
         this->oneName = oneName;
-        this->twoName = twoName;
-        this->intelName = intelName;
         this->app = app;
-        this->intelWidth = intelWidth;
-        this->intelHeight = intelHeight;
-        this->smallVideoHeight = smallVideoHeight;
-        this->smallVideoWidth = smallVideoWidth;
-
-        std::string imagePath = this->analysisImagesPath;
-        char num[64];
-        memset(num, 0, 64);
-        long x = 2;
-        sprintf(num, "%07ld", x);
-        imagePath += QString(num).toStdString();
-        imagePath += std::string(".png");
-        cv::Mat img = cv::imread(imagePath.c_str(), 1);
-
-        fySmallVideo = (double)smallVideoHeight/img.rows;
-        fxSmallVideo  = (double)smallVideoWidth/img.cols;
-
-        graphImg = cv::imread("/Users/Anshul/Desktop/Track/Build/TLD.app/Contents/Resources/graph.png", 1);
-        if (!graphImg.data) {
-            QMessageBox msgBox;
-            msgBox.setStyleSheet(QString("font: 14pt \"Source Sans Pro\""));
-            msgBox.setText("Unable to open ./TLD.app/Contents/Resources/graph.png");
-            msgBox.exec();
-            ok = false;
-        }
-        graphImg.copyTo(graphImgCrop);
-
-        cv::resize(graphImgCrop, graphImgCrop, cv::Size(), (double)intelWidth/graphImg.cols, (double)intelHeight/graphImg.rows);
-
-
     }
     ~Analyze(){
         delete analyzeGui;
     }
 
     int doWork();
-    void initGui(int oneX, int oneY, int twoX, int twoY, int intelX, int intelY);
+    void initGui(int videoX, int videoY);
 
 private:
+
+    void man(std::string command);
+    void play(QStringList& command);
+    void info(QStringList& command);
+    bool getCoordinates(long frame, std::string tracker, int& x, int& y, int& width, int& height);
+
+    void getStats();
+    bool parse();
+
+    void getCommand(QStringList& commandParts, bool& success);
+    void fillTotalAppearancesAND(std::vector <std::string>& list, std::vector<bool> &totalAppearances);
+    void fillTotalAppearancesOR(std::vector <std::string>& list, std::vector<bool> &totalAppearances);
+    bool isGroup(std::string group);
+    bool isTracker(std::string tracker);
     long startFrame(int trackerId);
     void showVideoImage(long frame, std::string winName);
-    bool check(std::vector<std::string>& list);
     void userError(std::string e);
-    void getImage(long frame, std::string newImageName, int x, int y, int width, int height);
     std::string getImagePath(long frame);
     void saveImage(long frame, std::string saveImagePath, bool crop, int x, int y, int width, int height);
     long getStartFrame(int trackerId);
-    bool isGroup(std::string group);
-    bool isTracker(std::string tracker);
-    void getStats();
-    void fillTotalAppearancesAND(std::vector <std::string>& list, std::vector<bool> &totalAppearances);
-    void fillTotalAppearancesOR(std::vector <std::string>& list, std::vector<bool> &totalAppearances);
-    void man(std::string command);
-    void play(QStringList& command);
-    void show(QStringList& command);
-    bool parse();
+
     void debugAnalyze();
-    void getCommand(QStringList& commandParts, bool& success);
 
     QTextEdit* aWin;
     QTextEdit* intelWin;
@@ -107,6 +78,8 @@ private:
     std::vector< long > endFrames;
     std::vector< long > startFrames;
     std::vector< std::vector<long> > startStopFrames;
+    std::vector< double > percentDetectionsTrackers;
+    std::vector< double > percentDetectionsGroups;
 
     struct colors {
         int r;
@@ -121,19 +94,6 @@ private:
     int numGroups;
     std::string analysisImagesPath;
     std::string oneName;
-    std::string twoName;
-    std::string intelName;
-    int intelWidth;
-    int intelHeight;
-    int smallVideoHeight;
-    int smallVideoWidth;
-    double fxSmallVideo;
-    double fySmallVideo;
-
-    cv::Mat graphImg;
-    cv::Mat graphImgCrop;
-    cv::Mat twoImg;
-    cv::Mat twoImgCrop;
 
 };
 
