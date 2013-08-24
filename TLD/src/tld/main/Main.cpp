@@ -1,3 +1,26 @@
+/* Modified by Anshul Samar
+ * Using libccv code from LiuLiu
+ * Previous Credits:
+ * Copyright 2011 AIT Austrian Institute of Technology
+ * This file is part of OpenTLD.
+ *
+ * OpenTLD is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * OpenTLD is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with OpenTLD.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * MainX.cpp
+ * Created on: Nov 17, 2011 Author: Georg Nebehay
+ */
+
 #include <QFile>
 #include <QTextStream>
 #include <QSettings>
@@ -41,7 +64,7 @@ using namespace cv;
 
 bool Main::track(Settings* settings) {
 
-    aWin->append("Use the following keys to direct Simba:\n'p' : play/pause\n'a' : add a tracker\n'q' : quit");
+    aWin->append("Use the following keys to direct Simba:\n'p' : play/pause\n'a' : add a tracker\n'd' : delete a tracker\n'r' : reinitialize a tracker\nq' : quit");
 
     aWin->append("\nWhen one of the trackers cannot find its patch in a frame, Simba will stop. If you wish to delete the tracker hit 'd' and then the trackerId. If you wish to reinitialize the tracker hit 'r' and then the trackerId. Hit 'p' when finished.\n\n");
     aWin->insertHtml("List of Available Trackers & Tracker IDs");
@@ -153,6 +176,17 @@ bool Main::track(Settings* settings) {
 
         if (lost){
 
+            IplImage *img0 = (IplImage *) cvClone(img);
+
+            CvFont font2;
+            cvInitFont(&font2, CV_FONT_HERSHEY_SIMPLEX, 0.5, 0.5, 0, 1, 8);
+
+           cvRectangle(img0, cvPoint(0, 0), cvPoint(img0->width, 30), CV_RGB(0, 0, 0), CV_FILLED, 8, 0);
+          cvPutText(img0, "Tracker(s) lost.", cvPoint(10, 20),
+                    &font2, cvScalar(255, 255, 0));
+
+           gui->showImage(img0);
+
             do {
                 key = gui->getKey();
                 if (userAction(key) == 0) {
@@ -160,6 +194,8 @@ bool Main::track(Settings* settings) {
                     break;
                 }
             } while (key != 'p');
+
+           cvReleaseImage(&img0);
 
         }
 
@@ -192,6 +228,7 @@ bool Main::track(Settings* settings) {
 
     ccv_matrix_free(x);
     ccv_disable_cache();
+    deleteTrackersAndGroups();
     writeSettingsToFile();
     return true;
 }
@@ -223,6 +260,17 @@ int Main::userAction(char key){
 
     if (key == 'r'){
 
+         IplImage *img0 = (IplImage *) cvClone(img);
+
+         CvFont font2;
+         cvInitFont(&font2, CV_FONT_HERSHEY_SIMPLEX, 0.5, 0.5, 0, 1, 8);
+
+        cvRectangle(img0, cvPoint(0, 0), cvPoint(img0->width, 30), CV_RGB(0, 0, 0), CV_FILLED, 8, 0);
+       cvPutText(img0, "Hit the number of the tracker you wish to reinitialize", cvPoint(10, 20),
+                 &font2, cvScalar(255, 255, 0));
+
+        gui->showImage(img0);
+
         char num = key;
         while (!isdigit(num)){
             num = gui->getKey();
@@ -234,7 +282,7 @@ int Main::userAction(char key){
         s >> numString;
         int trackerNum = QString(numString.c_str()).toInt();
 
-        IplImage *img0 = (IplImage *) cvClone(img);
+
         gui->showImage(img0);
 
         std::string message = string("Tracker number: ") + num + string(". Frame number: ") + QString::number(frameCount).toStdString() + string(". Draw bounding box and press enter");
@@ -419,6 +467,7 @@ void Main::deleteTracker(int i){
         delete rectangles[i];
         fclose(files[i]);
         trackers[i] = NULL;
+        std::cout << "deleted and closed file" << std::endl;
     }
 
 }
@@ -430,8 +479,9 @@ void Main::deleteTracker(int i){
 
 void Main::deleteTrackersAndGroups(){
 
-    for (int i = 0; i < numTrackers && trackers[i] != NULL; i++){
+    for (int i = 0; i < numTrackers; i++){
         deleteTracker(i);
+        std::cout << "tracker deleted" << std::endl;
     }
 
     for (int i = 0; i < groupColors.size(); i++){

@@ -1,3 +1,5 @@
+//Copyright 2013 Anshul Samar. All Rights Reserved.
+
 #include "AnalyzeGui.h"
 #include "Main.h"
 #include <string>

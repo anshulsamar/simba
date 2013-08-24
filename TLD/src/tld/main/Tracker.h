@@ -1,3 +1,6 @@
+//Copyright 2013 Anshul Samar. All Rights Reserved.
+//Using Libccv code from LiuLiu
+
 #ifndef TRACKER_H
 #define TRACKER_H
 

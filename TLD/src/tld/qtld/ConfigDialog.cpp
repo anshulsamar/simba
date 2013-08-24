@@ -1,3 +1,24 @@
+/* Modified by Anshul Samar
+ * Previous Credits:
+*  Copyright 2011 AIT Austrian Institute of Technology
+*
+*   This file is part of OpenTLD.
+*
+*   OpenTLD is free software: you can redistribute it and/or modify
+*   it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation, either version 3 of the License, or
+*   (at your option) any later version.
+*
+*   OpenTLD is distributed in the hope that it will be useful,
+*   but WITHOUT ANY WARRANTY; without even the implied warranty of
+*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*   GNU General Public License for more details.
+*
+*   You should have received a copy of the GNU General Public License
+*   along with OpenTLD.  If not, see <http://www.gnu.org/licenses/>.
+*
+*/
+
 #include <QWidget>
 #include <QDesktopWidget>
 #include <QMainWindow>
@@ -66,27 +87,19 @@ void ConfigDialog::on_pushButton_saveResults_clicked()
     ui->resultsDirectory->setText(file);
 }
 
-void ConfigDialog::on_pushButton_saveAnalysis_clicked()
-{
-    QString file = QFileDialog::getExistingDirectory(this, tr("Output directory for Ini file"),
-                   QDir::currentPath());
-    ui->saveAnalysisDirectory->setText(file);
-}
-
 void ConfigDialog::on_buttonBox_accepted()
 {
     m_settings->m_track = ui->loadTrackImages->isChecked();
     m_settings->m_analyze = ui->loadAnalysisImages->isChecked();
     m_settings->m_saveResults = ui->saveResults->isChecked();
-    m_settings->m_saveAnalysis = ui->saveAnalysis->isChecked();
 
-    if ((!m_settings->m_track && !m_settings->m_analyze) || (m_settings->m_track && !m_settings->m_saveResults) || (m_settings->m_analyze && !m_settings->m_saveAnalysis) ){
+    if ((!m_settings->m_track && !m_settings->m_analyze) || (m_settings->m_track && !m_settings->m_saveResults)){
         *err = 2;
         close();
         return;
     }
 
-    if ((m_settings->m_track == true && ui->trackImagesPath->text().isEmpty()) || (m_settings->m_analyze == true && ui->analysisImagesPath->text().isEmpty()) || (m_settings->m_saveResults == true && ui->resultsDirectory->text().isEmpty()) || (m_settings->m_saveAnalysis ==true && ui->saveAnalysisDirectory->text().isEmpty())){
+    if ((m_settings->m_track == true && ui->trackImagesPath->text().isEmpty()) || (m_settings->m_analyze == true && ui->analysisImagesPath->text().isEmpty()) || (m_settings->m_saveResults == true && ui->resultsDirectory->text().isEmpty())){
         *err = 3;
         close();
         return;
@@ -110,11 +123,6 @@ void ConfigDialog::on_buttonBox_accepted()
             m_settings->m_resultsDirectory += std::string("/");
     }
 
-    if(!ui->saveAnalysisDirectory->text().isEmpty()){
-        m_settings->m_saveAnalysisDirectory = ui->saveAnalysisDirectory->text().toStdString();
-        if (m_settings->m_saveAnalysisDirectory[m_settings->m_saveAnalysisDirectory.length() - 1] != '/')
-            m_settings->m_saveAnalysisDirectory += std::string("/");
-    }
 
     m_settings->win_size_width = ui->win_size_width->text().toInt();
     m_settings->win_size_height = ui->win_size_height->text().toInt();

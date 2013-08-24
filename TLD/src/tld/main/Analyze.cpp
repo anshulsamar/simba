@@ -1,3 +1,5 @@
+//Copyright 2013 Anshul Samar. All Rights Reserved.
+
 #include <QApplication>
 #include <QFile>
 #include <QTextStream>
@@ -45,7 +47,7 @@ void Analyze::man(std::string command){
 
     if (command.compare("man") == 0) {
         aWin->insertHtml(QString("<p><b>Commands:</b><br></p>"));
-        aWin->insertHtml(QString("<p>Type \"man\" followed by any of the commands to learn more: play, info, quit.<br><br></p>"));
+        aWin->insertHtml(QString("<p>Type \"man\" followed by any of the commands to learn more: play, info, quit.<br></p>"));
 
     }
 
@@ -89,6 +91,8 @@ void Analyze::play(QStringList& command){
 
     std::vector <std::string> list;
     std::vector <std::string> list2;
+    list.clear();
+    list2.clear();
     bool combo = false;
     bool single = false;
     std::vector<bool> totalAppearances(frameCount);
@@ -104,7 +108,7 @@ void Analyze::play(QStringList& command){
         startFrame = command[2].toLong(&ok1);
         endFrame = command[4].toLong(&ok2);
         if (!ok1 || !ok2 || startFrame < 1 || endFrame < 1 || endFrame > frameCount) {
-            userError("You did not enter properly formatted frame numbers (note: both startFrame and endFrame must be in proper ranges.");
+            userError("You did not enter properly formatted frame numbers (note: both startFrame and endFrame must be in proper ranges.)");
             return;
         }
     } else if(command.size() >= 2 && command[1].compare("-tracker") == 0){
@@ -128,7 +132,7 @@ void Analyze::play(QStringList& command){
             return;
         }
         if (!isGroup(command[2].toStdString())){
-          userError("Tracker does not exist.");
+          userError("Group does not exist.");
           return;
 
         }
@@ -161,6 +165,7 @@ void Analyze::play(QStringList& command){
               }
 
                 if (op.compare("&&") == 0){
+                    std::cout << "Combo function filling and appearances" << std::endl;
                      fillTotalAppearancesAND(list, totalAppearances);
                 }
                 else if (op.compare("||") == 0)
@@ -178,12 +183,11 @@ void Analyze::play(QStringList& command){
                 for (int i = 5; i < command.size(); i+=2){
                     std::string tracker1 = command[i+1].toStdString();
 
-              if (!isTracker(tracker1) && !isGroup(tracker1)){
-                userError("Tracker or group does not exist.");
-                return;
+                      if (!isTracker(tracker1) && !isGroup(tracker1)){
+                        userError("Tracker or group does not exist.");
+                        return;
 
-              }
-
+                      }
 
                     std::string op = command[i].toStdString();
                     list2.clear();
@@ -208,16 +212,6 @@ void Analyze::play(QStringList& command){
         return;
     }
 
-    int numGraphLines = 10;
-
-    if (list.size() <= 10)
-        numGraphLines = list.size();
-
-    int xCoord = 20;
-
-    std::string imagePath;
-    char num[64];
-
     if (combo || single)
         while (!totalAppearances[startFrame - 1])
             startFrame++;
@@ -227,13 +221,12 @@ void Analyze::play(QStringList& command){
         if (combo || single){
             if (totalAppearances[startFrame - 1]){
                 showVideoImage(startFrame, oneName);
+                cvWaitKey(30);
             }
         } else {
-           cv::Mat img = imread(imagePath.c_str(), 1);
            showVideoImage(startFrame, oneName);
+           cvWaitKey(30);
         }
-
-        cvWaitKey(30);
         startFrame++;
     }
 
@@ -255,6 +248,8 @@ bool Analyze::getCoordinates(long frame, std::string tracker, int& x, int& y, in
     width = s[2].toInt();
     height = s[3].toInt();
 
+    return true;
+
 }
 
 /* Function: info(QStringList& command)
@@ -265,8 +260,6 @@ bool Analyze::getCoordinates(long frame, std::string tracker, int& x, int& y, in
 
 void Analyze::info(QStringList& command){
 
-    std::cout << "entered" << std::endl;
-    std::cout << QString::number(command.size()).toStdString() << std::endl;
     if (command.size() == 1){
 
         aWin->insertHtml(QString("<u>Trackers</u><br>"));
@@ -274,8 +267,6 @@ void Analyze::info(QStringList& command){
             aWin->insertHtml(QString(idToTrackerName[i].c_str()) + QString(", ") + QString("Group: ") + QString(idToGroupName[trackersToGroupMap[i]].c_str()) + QString("<br>"));
 
         }
-
-
     }
 
     if (command.size() == 3 && command[1].compare("-tracker") == 0){
@@ -346,6 +337,7 @@ void Analyze::info(QStringList& command){
 int Analyze::doWork() {
 
     parse();
+    debugAnalyze();
     showVideoImage(1, oneName);
 
     aWin->insertHtml(QString("Simba$ "));
@@ -363,7 +355,6 @@ int Analyze::doWork() {
         if (success){
 
             action = command[0].toStdString();
-            std::cout << action << std::endl;
 
             if (action.compare("man") == 0){
                 if (command.size() != 2)
@@ -383,6 +374,7 @@ int Analyze::doWork() {
             }
 
             aWin->insertHtml(QString("Simba$ "));
+            aWin->ensureCursorVisible();
         }
 
        app->processEvents();
@@ -671,7 +663,7 @@ bool Analyze::parse(){
 
 void Analyze::fillTotalAppearancesAND(std::vector <std::string>& list, std::vector<bool> &totalAppearances){
 
-    for (int f = 0; f < totalAppearances.size(); f++){
+    for (long f = 0; f < totalAppearances.size(); f++){
 
         bool b;
 
@@ -687,6 +679,11 @@ void Analyze::fillTotalAppearancesAND(std::vector <std::string>& list, std::vect
                 b = b && (trackerAppearances[trackerNameToId[list[i]]])[f];
 
         }
+
+        if (b)
+            std::cout << QString::number(f).toStdString() + ": 1" << std::endl;
+        else
+                        std::cout << QString::number(f).toStdString() + ": 0" << std::endl;
 
         totalAppearances[f] = b;
     }
@@ -735,8 +732,6 @@ void Analyze::userError(std::string e){
  */
 
 void Analyze::debugAnalyze(){
-
-    std::cout << "Printing id to tracker name" << std::endl;
 
     for (int i = 0; i < idToTrackerName.size(); i++){
         std::string s = idToTrackerName.at(i);

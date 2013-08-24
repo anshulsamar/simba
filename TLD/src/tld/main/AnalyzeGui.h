@@ -1,3 +1,5 @@
+//Copyright 2013 Anshul Samar. All Rights Reserved.
+
 #ifndef AnalyzeGui_H_
 #define AnalyzeGui_H_
 

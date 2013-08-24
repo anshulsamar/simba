@@ -1,9 +1,5 @@
-/* Lion: Libccv's TLD ("Predator") with GUI
- * ----------------------------
- * Last modified by: Anshul Samar.
- *
- *
- */
+//Copyright 2013 Anshul Samar. All Rights Reserved.
+//Using Libccv code from LiuLiu
 
 #include <QThread>
 #include <vector>

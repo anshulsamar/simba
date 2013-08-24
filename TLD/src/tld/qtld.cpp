@@ -1,3 +1,28 @@
+/* Modified by Anshul Samar
+ * Previous Credits:
+*  Copyright 2011 AIT Austrian Institute of Technology
+*
+*   This file is part of OpenTLD.
+*
+*   OpenTLD is free software: you can redistribute it and/or modify
+*   it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation, either version 3 of the License, or
+*   (at your option) any later version.
+*
+*   OpenTLD is distributed in the hope that it will be useful,
+*   but WITHOUT ANY WARRANTY; without even the implied warranty of
+*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*   GNU General Public License for more details.
+*
+*   You should have received a copy of the GNU General Public License
+*   along with OpenTLD.  If not, see <http://www.gnu.org/licenses/>.
+*
+*/
+
+/**
+  * @author Clemens Korner
+  */
+
 #include <QWidget>
 #include <QDesktopWidget>
 #include <QApplication>
@@ -86,7 +111,7 @@ int main(int argc, char **argv)
             if (err == 2){
                 QMessageBox msgBox;
                 msgBox.setStyleSheet(QString("font: 14pt \"Source Sans Pro\""));
-                msgBox.setText("Either you haven't clicked one of \"track\" or \"analyze\" or didn't provide directories in which to save their results.");
+                msgBox.setText("Either you haven't clicked one of \"track\" or \"analyze\" or didn't provide directories in which to save tracker results.");
                 msgBox.exec();
             }
             if (err == 3){
@@ -215,7 +240,7 @@ int main(int argc, char **argv)
             aWin->resize(controlWidth, controlHeight);
             aWin->setWindowTitle("Simba");
             aWin->move(controlX, controlY);
-            QString b("QWidget {background-color: black}\nQWidget {color: rgb(255, 255, 255)}\nQWidget {font: 14pt \"Source Sans Pro\"}");
+            QString b("QWidget {background-color: black}\nQWidget {color: rgb(192,192,192)}\nQWidget {font: 14pt \"Source Sans Pro\"}");
             aWin->setStyleSheet(b);
             aWin->show();
             aWin->append(QString("Track Learn Detect\n"));
@@ -253,7 +278,7 @@ int main(int argc, char **argv)
             aWin->resize(controlWidth, controlHeight);
             aWin->setWindowTitle("Simba");
             aWin->move(controlX, controlY);
-            QString b("QWidget {background-color: black}\nQWidget {color: rgb(255, 255, 255)}\nQWidget {font: 14pt \"Source Sans Pro\"}");
+            QString b("QWidget {background-color: black}\nQWidget {color: rgb(192,192,192)}\nQWidget {font: 14pt \"Source Sans Pro\"}");
             aWin->setStyleSheet(b);
             aWin->show();
             aWin->append(QString("Track Learn Detect\n"));
