@@ -3,6 +3,8 @@
 *.psd
 changeLibraryPathsWithQTDynamic.sh
 BuildOCV
+make.txt
+Build/src
 lib
 OpenCV
 CMakeLists.txt.user
