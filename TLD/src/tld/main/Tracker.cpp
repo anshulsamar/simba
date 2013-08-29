@@ -68,7 +68,7 @@ void Tracker::reinitialize(ccv_tld_param_t ccv_tld_params){
 
     ccv_tld_free(ccvtld);
     ccv_rect_t ccvBox = ccv_rect(rect->x, rect->y, rect->width, rect->height);
-    ccvtld = ccv_tld_new(*xPtr, ccvBox, ccv_tld_params);
+    ccvtld = ccv_tld_new(*yPtr, ccvBox, ccv_tld_params);
     std::cout << "now here" << std::endl;
 
 }

@@ -116,7 +116,7 @@ bool Main::track(Settings* settings) {
         if (!img)
             break;
 
-        //read next image into "y"
+        //read next image into "y" (trackers will try to find objects in this image)
         ccv_read(imagePath.c_str(), &y, CCV_IO_GRAY | CCV_IO_ANY_FILE);
 
         //release semaphores (the tracker threads now determine where the tracked object is in curr frame)
@@ -133,6 +133,9 @@ bool Main::track(Settings* settings) {
 
         //will be set to true if a tracker could not find its object in the current frame
         bool lost = false;
+
+        //Clone image for use
+        IplImage *img0 = (IplImage *) cvClone(img);
 
         //Draws rectangles on the current image around the detected objects
         for (int i = 0; i < numTrackers; i++){
@@ -151,17 +154,55 @@ bool Main::track(Settings* settings) {
                     fprintf(files[i], "\n%s", s.toStdString().c_str());
 
                } else {
-                    lost = true;
-                    fprintf(files[i], "\n%s", "0,0,0,0");
+
+                    //If a track is lost, we stop and let the user reinitialize trackers
+
+                    CvFont font2;
+                    cvInitFont(&font2, CV_FONT_HERSHEY_SIMPLEX, 0.5, 0.5, 0, 1, 8);
+
+                    cvRectangle(img0, cvPoint(0, 0), cvPoint(img0->width, 30), CV_RGB(0, 0, 0), CV_FILLED, 8, 0);
+                    QString msg = QString("Tracker ") + QString(idToTrackerName[i].c_str()) + QString(", #") + QString::number(i) + QString(" lost");
+                    cvPutText(img0, msg.toStdString().c_str(), cvPoint(10, 20),
+                            &font2, cvScalar(255, 255, 0));
+
+                    gui->showImage(img0);
+
+                    while (true){
+                        key = gui->getKey();
+                        if (key == 'q') {
+                            quit = true;
+                            break;
+                        }
+                        if (key == 'r'){
+                            std::string message = string("Tracker number: ") + QString::number(i).toStdString() + string(". Frame number: ") + QString::number(frameCount).toStdString() + string(". Draw bounding box and press enter");
+                            if(getBBFromUser(img0, *rectangles[i], gui, i, message) == 0) return 0;
+                            trackers[i]->reinitialize(ccv_tld_params);
+                            QString s = QString::number(rectangles[i]->x) + "," + QString::number(rectangles[i]->y) + "," + QString::number(rectangles[i]->width) + "," + QString::number(rectangles[i]->height);
+                            fprintf(files[i], "\n%s", s.toStdString().c_str());
+                            break;
+                        }
+                        if (key == 'p') {
+                            fprintf(files[i], "\n%s", "0,0,0,0");
+                            break;
+                        }
+                    }
+
+                    if (quit == true) break;
+                    //lost = true;
+                    // fprintf(files[i], "\n%s", "0,0,0,0");
+
                 }
+
             }
 
         }
 
-        //Free x and update x and y
+        cvReleaseImage(&img0);
+
+        //Free x and update x
         ccv_matrix_free(x);
         x = y;
-        y = 0;
+        //y = 0;
 
         //Saves image with rectangles in ResultsDirectory
         saveImagePath = getImagePath(frameCount, resultsDirectory);
@@ -172,9 +213,9 @@ bool Main::track(Settings* settings) {
 
         key = 0;
 
-        //If a track is lost, we stop and let the user reinitialize trackers with keyboard commands
+        //If a track is lost, we stop and let the user reinitialize trackers
 
-        if (lost){
+        /*if (lost){
 
             IplImage *img0 = (IplImage *) cvClone(img);
 
@@ -199,7 +240,7 @@ bool Main::track(Settings* settings) {
 
         }
 
-        if (quit == true) break;
+        if (quit == true) break;*/
 
         //Lets user add a tracker, quit the program, or play/pause with keyboard command
 
@@ -290,6 +331,8 @@ int Main::userAction(char key){
 
         if (trackerNum < numTrackers && trackerNum >= 0 && trackers[trackerNum] != NULL)
             trackers[trackerNum]->reinitialize(ccv_tld_params);
+
+
 
         gui->showImage(img);
         cvReleaseImage(&img0);
