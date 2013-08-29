@@ -64,11 +64,11 @@ Tracker::Tracker(long frameCount, int trackerId, std::string videoPath, QSemapho
  * Reinitializes a tracker ("rect" should have been updated by the main.cpp thread)
  */
 
-void Tracker::reinitialize(ccv_tld_param_t ccv_tld_params){
+void Tracker::reinitialize(ccv_tld_param_t ccv_tld_params,  ccv_dense_matrix_t* ptr){
 
     ccv_tld_free(ccvtld);
     ccv_rect_t ccvBox = ccv_rect(rect->x, rect->y, rect->width, rect->height);
-    ccvtld = ccv_tld_new(*yPtr, ccvBox, ccv_tld_params);
+    ccvtld = ccv_tld_new(ptr, ccvBox, ccv_tld_params);
     std::cout << "now here" << std::endl;
 
 }

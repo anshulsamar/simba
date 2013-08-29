@@ -104,7 +104,12 @@ static void mouseHandler(int event, int x, int y, int flags, void *param)
     {
         img1 = (IplImage *) cvClone(img0);
 
-        cvRectangle(img1, point, cvPoint(x, y), CV_RGB(255, 0, 0), 1, 8, 0);
+        cvRectangle(img1, point, cvPoint(x, y), CV_RGB(135, 206, 250), 1, 8, 0);
+
+        cvInitFont(&font, CV_FONT_HERSHEY_SIMPLEX, 0.5, 0.5, 0, 1, 8);
+        QString message = QString::number(point.x) + QString(" ") + QString::number(point.y) + QString(" ") + QString::number(x - point.x) + QString(" ") + QString::number(y - point.y);
+         cvPutText(img1, message.toStdString().c_str(), cvPoint(x + 10, y + 10),
+                  &font, cvScalar(255, 255, 0));
 
         cvShowImage(window_name.c_str(), img1);
         cvReleaseImage(&img1);

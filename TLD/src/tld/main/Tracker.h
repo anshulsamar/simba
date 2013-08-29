@@ -48,8 +48,8 @@ public:
     //Called by main thread when a tracker is deleted
     void trackingComplete();
 
-    //Reinitializes the tracker on a new patch (coordinates of which are accessed through CvRect *rect
-    void reinitialize(ccv_tld_param_t ccv_tld_params);
+    //Reinitializes the tracker on a new patch (coordinates of which are accessed through CvRect *rect), patch is in img pointed to by ptr
+    void reinitialize(ccv_tld_param_t ccv_tld_params,  ccv_dense_matrix_t* ptr);
 
 protected:
     void run();
