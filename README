@@ -1,6 +1,6 @@
 Project Simba
 
-Simba allows researchers to use computer visions algorithms to track people, faces, hands, cars, and moving objects in video. It was my 2013 summer project under Dr. Guido Pusiol, a postdoc in Stanford’s Computer Vision Lab and Dr. Michael Frank, Assistant Professor of Psychology at the Stanford Language and Cognition Lab. As part of this project, I built an end-to-end C++ multi-threaded tracking system using opensource tracking libraries, wrote a platform to do statistical analysis on video data, and built a Mac app.
+Simba allows researchers to use computer visions algorithms to track people, faces, hands, cars, and moving objects in video.  As part of this project, I programmed an end to end C++ multi-threated tracking system using open source tracking libraries (libccv, OpenCV, OpenTLD), wrote a platform to do statistical analysis on video data,  and built a Mac app. 
 
 Created By:
 Anshul Samar
