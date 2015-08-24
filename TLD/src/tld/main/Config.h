@@ -1,3 +1,5 @@
+//missing attribution... todo/can't remember where this is from
+
 #ifndef CONFIG_H
 #define CONFIG_H
 
