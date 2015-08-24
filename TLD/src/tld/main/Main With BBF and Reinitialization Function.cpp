@@ -1,3 +1,5 @@
+//credits in other file
+
 #include <QFile>
 #include <QTextStream>
 #include <QSettings>
