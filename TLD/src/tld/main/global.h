@@ -1,3 +1,5 @@
+//missing attribution... todo/can't remember where this is from
+
 #ifndef GLOBAL_H
 #define GLOBAL_H
 
