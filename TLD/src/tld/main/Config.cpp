@@ -1,3 +1,5 @@
+//missing attribution... todo/can't remember where this is from
+
 #include "Config.h"
 #include "Main.h"
 #include <QSettings>
