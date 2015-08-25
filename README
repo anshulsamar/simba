@@ -1,6 +1,6 @@
 Project Simba
 
-Simba allows researchers to use computer visions algorithms to track people, faces, hands, cars, and moving objects in video.  As part of this project, I programmed an end to end C++ multi-threated tracking system using open source tracking libraries (libccv, OpenCV, OpenTLD), wrote a platform to do statistical analysis on video data,  and built a Mac app. 
+Simba allows researchers to use computer visions algorithms to track people, faces, hands, cars, and moving objects in video.  As part of this project, I programmed a multi-threated tracking system using open source tracking libraries (libccv, OpenCV, OpenTLD), wrote a platform to do statistical analysis on video data,  and built a Mac app. Code written in C++.
 
 Created By:
 Anshul Samar
