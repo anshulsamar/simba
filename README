@@ -1,6 +1,6 @@
 Project Simba
 
-Simba allows researchers to use computer visions algorithms to track people, faces, hands, cars, and moving objects in video.  As part of this project, I extended OpenTLD's tracking application to a full multi-threaded system, with command line like querying of video and tracking data, new UI features, and access to multiple tracking algorithms from libccv. 
+Simba allows researchers to use computer visions algorithms to track people, faces, hands, cars, and moving objects in video.  As part of this project, I extended OpenTLD's tracking application to a full multi-threaded system, with command line like querying of video and tracking data, new UI features, and access to multiple tracking algorithms from libccv. Libraries used: OpenTLD, libccv, OpenCV, and QT. 
 
 Created By:
 Anshul Samar
